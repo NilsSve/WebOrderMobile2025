@@ -1,0 +1,505 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cWebAccordionContainer.pkg
+Use cWebAccordionCard.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+Use cSalesPersonDataDictionary.dd
+Use cOrderHeaderDataDictionary.dd
+
+// This example webview shows the results of the Salesperson Overview report. The report is an RDS report with
+// a crosstab sub-report directly reading from the database tables. The RDS data-source has been selected to
+// demonstrate how you can load image data into an RDS record.
+
+// The code also shows how to make use of the 6.2/19.x and higher ConvertTableDataToJsonSampleData library function. This
+// function converts the variant[][] array into a uchar[] array that matches a tDataSourceRow struct. After
+// converting the data the information is written into a JSON file. This JSON file can be imported in the
+// DataFlex Reports Studio so that the report has more and better test data.
+
+// The user can express - via the checkbox - whether the report should show the crosstab information or not
+
+// This webview is special as its layout changes greatly on the used device and its orientation mode. Check the OnResizeWindow
+// event comments for more information
+
+// While the user can choose a different sort order it makes not much difference as names and code are related to eachother
+// Changing the sort direction makes a difference
+
+Object oSalespersonOverviewReport is a cWebView
+    Object oSalesPerson_DD is a cSalesPersonDataDictionary
+    End_Object
+
+    Object oOrderHeader_DD is a cOrderHeaderDataDictionary
+        Set DDO_Server to oSalesPerson_DD
+        Set Constrain_File to SalesPerson.File_Number
+    End_Object
+
+    Set Main_DD to oSalesPerson_DD
+    Set Server to oSalesPerson_DD
+
+    Set psCaption to "Salesperson Overview"
+    Set pbShowCaption to False
+    Set peViewType to vtUndefined
+    Set peWebViewStyle to wvsDrillDown
+    Set pbServerOnResizeWindow to True
+
+    Object oReport is a cDRReport
+        Set psReportName to "Salesperson Overview.dr"
+
+        Procedure OnCreate
+            Forward Send OnCreate
+
+            Set piReportLanguage '' to LANG_DEFAULT
+        End_Procedure
+
+        Procedure OnInitializeReport
+            Send SetSortFields
+            Send SetParameters
+            Send CollectData
+        End_Procedure
+
+        // Via the parameter SalesOverview the report can show a crosstab per salesperson. The option to control
+        // this parameter comes from a different checkbox when the view runs on a mobile device in portrait mode
+        // then when it does not run in that mode
+        Procedure SetParameters
+            String sReportId
+            Boolean bShow
+            Integer iParameter eMode
+
+            WebGet peMode of ghoWebApp to eMode
+            If (eMode = rmMobilePortrait) Begin
+                Get GetChecked of oMobileDeviceShowSalesPerState to bShow
+            End
+            Else Begin
+                Get GetChecked of oMainPanelShowSalesPerState to bShow
+            End
+
+            Get psReportId to sReportId
+            Get ParameterIdByName sReportId "SalesOverview" to iParameter
+            Set psParameterValue sReportId iParameter to bShow
+        End_Procedure
+
+        // The sort order choice comes from the UI but the comboform is either placed in a cWebGroup or in a cWebAccordionCard
+        // depending on the device and its orientation
+        Procedure SetSortFields
+            String sReportId sSortField
+            Boolean bDescending
+            Integer eMode
+
+            Get psReportId to sReportId
+
+            WebGet peMode of ghoWebApp to eMode
+            If (eMode = rmMobilePortrait) Begin
+                Get GetChecked of oMobileDeviceSortDescending to bDescending
+                WebGet psValue of oMobileDeviceSortOnCombo to sSortField
+            End
+            Else Begin
+                Get GetChecked of oMainPanelSortDescending to bDescending
+                WebGet psValue of oMainPanelSortOnCombo to sSortField
+            End
+
+            Send RemoveAllRecordSortFields sReportId
+
+            If (bDescending) Begin
+                Send AddRecordSortField sReportId sSortField C_drDescending
+            End
+            Else Begin
+                Send AddRecordSortField sReportId sSortField C_drAscending
+            End
+        End_Procedure
+
+        // Read all salesperson data from the salesperson table via the DDO and add ID, NAME and Avatar file contents
+        // to the RDS array.
+        Procedure CollectData
+            String sReportId sPath sFileName
+            Variant[][] vData
+            Integer iRow iChannel iLength iResult
+            UChar[] ucFileData
+            Address aFileData
+            Boolean bGenerateTestData
+
+            Move 0 to iRow
+
+            Move (Seq_New_Channel ()) to iChannel
+            If (iChannel >= 0) Begin
+                Register_Object oZoomSalesPerson
+                Get SalesAvatarsFolder of oZoomSalesPerson to sPath
+
+                Send Request_Read of oSalesPerson_DD FIRST_RECORD (RefTable (SalesPerson)) 1
+                While (Found)
+                    Move (Trim (SalesPerson.ID)) to vData[iRow][0]
+                    Move (Trim (SalesPerson.Name)) to vData[iRow][1]
+
+                    // Construct the full name (path + filename) of the image file
+                    If (Trim (SalesPerson.Avatar) <> "") Begin
+                        Move (sPath + "\" + Trim (SalesPerson.Avatar)) to sFileName
+                    End
+                    Else Begin
+                        Move (sPath + "\NONE.jpg") to sFileName
+                    End
+
+                    // Read the image file contents into a UChar array
+                    Direct_Input channel iChannel ("BINARY:" - sFileName)
+                    Read_Block channel iChannel ucFileData -1
+                    Close_Input channel iChannel
+
+                    Move (Base64Encode (AddressOf (ucFileData), SizeOfArray (ucFileData))) to aFileData
+                    Move (CStringLength (aFileData)) to iLength
+                    Move (ResizeArray (ucFileData, iLength, 0)) to ucFileData
+                    Move (MemCopy (AddressOf (ucFileData), aFileData, iLength)) to iResult
+                    Move (UCharArrayToString (ucFileData, SizeOfArray (ucFileData))) to vData[iRow][2]
+                    Move (Free (aFileData)) to iResult
+
+                    Send Clear of oOrderHeader_DD
+                    Fill_Field (Reftable (OrderHeader)) (RefTable (OrderHeader.Order_Number)) With DF_HIGH
+                    Send Request_Read of oOrderHeader_DD FIRST_RECORD (RefTable (OrderHeader)) 4
+                    Move OrderHeader.Order_Number to vData[iRow][3]
+
+                    // Find the next salesperson
+                    Send Locate_Next of oSalesPerson_DD
+                    Increment iRow
+                Loop
+
+                Get GetChecked of oGenerateTestData to bGenerateTestData
+                If (bGenerateTestData) Begin
+                    // Convert the vData array to a uChar array and export to disk. This makes it possible to read
+                    // the file as testdata during report design
+                    Get ConvertTableDataToJsonSampleData vData to ucFileData
+                    Get ReportsCacheFolder to sPath
+                    Move (sPath - "SalesPersonSampleData.json") to sFileName
+                    Direct_Output channel iChannel sFileName
+                    Write channel iChannel ucFileData
+                    Close_Output channel iChannel
+                End
+
+                Send Seq_Release_Channel iChannel
+            End
+
+            Get psReportId to sReportId
+            Send TableData sReportId 0 vData
+        End_Procedure
+    End_Object
+
+    Object oMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Integer eMode
+
+            WebGet peMode of ghoWebApp to eMode
+            If (eMode >= rmMobilePortrait) Begin
+                Send ShowReport of oMobileDeviceViewer
+            End
+            Else Begin
+                Send ShowReport of oMainPanelViewer
+            End
+        End_Procedure
+
+        Object oMainPanelOptionsGroup is a cWebGroup
+            Set psCaption to "Options:"
+            Set piColumnCount to 12
+            Set piColumnSpan to 6
+            Set piHeight to 125
+
+            WebSetResponsive piColumnSpan rmMobile to 0
+
+            Object oMainPanelShowSalesPerState is a cWebCheckBox
+                Set piColumnSpan to 12
+                Set psCaption to "Show Sales per USA State (crosstab)"
+                Set pbServerOnChange to True
+
+                Procedure OnChange String sNewValue String sOldValue
+                    Forward Send OnChange sNewValue sOldValue
+
+                    Send RunReport
+                End_Procedure
+            End_Object
+
+            Object oGenerateTestData is a cWebCheckBox
+                Set piColumnSpan to 12
+                Set psCaption to "Generate JSON Test Data"
+            End_Object
+        End_Object
+
+        Object oMainPanelSortOrderGroup is a cWebGroup
+            Set psCaption to "Order By:"
+            Set piColumnCount to 12
+            Set piColumnSpan to 6
+            Set piColumnIndex to 6
+            Set piHeight to 125
+
+            WebSetResponsive piColumnSpan rmMobile to 0
+            WebSetResponsive piColumnIndex rmMobile to 0
+
+            Object oMainPanelSortOnCombo is a cWebCombo
+                Set piColumnSpan to 7
+                Set pbShowLabel to False
+                Set pbServerOnChange to True
+
+                Procedure OnFill
+                    Send AddComboItem "{SalesPerson.ID}" "ID"
+                    Send AddComboItem "{SalesPerson.Name}" "Name"
+                    Send AddComboItem "{SalesPerson.HighestOrderNumber}" "Last Order Number"
+                End_Procedure
+
+                Set psValue to "{SalesPerson.ID}"
+
+                Procedure OnChange String sNewValue String sOldValue
+                    Forward Send OnChange sNewValue sOldValue
+
+                    Send RunReport
+                End_Procedure
+            End_Object
+
+            Object oMainPanelSortDescending is a cWebCheckBox
+                Set piColumnIndex to 7
+                Set piColumnSpan to 5
+                Set psCaption to "Descending"
+                Set pbServerOnChange to True
+
+                Procedure OnChange String sNewValue String sOldValue
+                    Forward Send OnChange sNewValue sOldValue
+
+                    Send RunReport
+                End_Procedure
+            End_Object
+        End_Object
+
+        Object oMainPanelViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+            Set pbServerOnClickActionLink to True
+
+            Property String psRowId
+
+            WebRegisterPath ntNavigateForward oZoomSalesPerson
+
+            Procedure OnClickActionLink String sData Variant vDataType
+                Forward Send OnClickActionLink sData vDataType
+
+                If (vDataType = 1) Begin
+                    Move sData to SalesPerson.Id
+                    Send Request_Read of oSalesPerson_DD EQ (RefTable (SalesPerson)) 1
+                    Set psRowId to (SerializeRowID (GetRowID (RefTable (SalesPerson))))
+                End
+
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                Forward Send OnGetNavigateForwardData (&NavigateData) hoToView
+
+                Get psRowId to NavigateData.sRowID
+                Move (RefTable (SalesPerson)) to NavigateData.iTable
+            End_Procedure
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+        End_Object
+
+        Object oMobileDeviceContainer is a cWebAccordionContainer
+            Set pbOpenFirst to False
+            Set pbFillHeight to True
+            Set pbRender to False
+
+            Object oMobileDeviceOptionsCard is a cWebAccordionCard
+                Set psCaption to "Options"
+
+                Object oMobileDeviceShowSalesPerState is a cWebCheckBox
+                    Set piColumnSpan to 12
+                    Set psCaption to "Show Sales per USA State (crosstab)"
+                    Set pbServerOnChange to True
+
+                    Procedure OnChange String sNewValue String sOldValue
+                        Forward Send OnChange sNewValue sOldValue
+
+                        Send RunReport
+                    End_Procedure
+                End_Object
+
+                Object oGenerateTestData is a cWebCheckBox
+                    Set piColumnSpan to 12
+                    Set psCaption to "Generate JSON Test Data"
+                End_Object
+            End_Object
+
+            Object oMobileDeviceOrderbyCard is a cWebAccordionCard
+                Set psCaption to "Order by"
+
+                Object oMobileDeviceSortOnCombo is a cWebCombo
+                    Set piColumnSpan to 7
+                    Set pbShowLabel to False
+                    Set pbServerOnChange to True
+
+                    Procedure OnFill
+                        Send AddComboItem "{SalesPerson.ID}" "ID"
+                        Send AddComboItem "{SalesPerson.Name}" "Name"
+                        Send AddComboItem "{SalesPerson.HighestOrderNumber}" "Last Order Number"
+                    End_Procedure
+
+                    Set psValue to "{SalesPerson.ID}"
+
+                    Procedure OnChange String sNewValue String sOldValue
+                        Forward Send OnChange sNewValue sOldValue
+
+                        Send RunReport
+                    End_Procedure
+                End_Object
+
+                Object oMobileDeviceSortDescending is a cWebCheckBox
+                    Set piColumnIndex to 7
+                    Set piColumnSpan to 5
+                    Set psCaption to "Descending"
+                    Set pbServerOnChange to True
+
+                    Procedure OnChange String sNewValue String sOldValue
+                        Forward Send OnChange sNewValue sOldValue
+
+                        Send RunReport
+                    End_Procedure
+                End_Object
+            End_Object
+
+            Object oMobileDeviceResultsCard is a cWebAccordionCard
+                Set psCaption to "Results"
+
+                Object oMobileDeviceViewer is a cWebDRReportViewer
+                    Set phoReport to oReport
+                    Set pbServerOnClickActionLink to True
+
+                    Property String psRowId
+
+                    WebRegisterPath ntNavigateForward oZoomSalesPerson
+
+                    Procedure OnClickActionLink String sData Variant vDataType
+                        Forward Send OnClickActionLink sData vDataType
+
+                        If (vDataType = 1) Begin
+                            Move sData to SalesPerson.Id
+                            Send Request_Read of oSalesPerson_DD EQ (RefTable (SalesPerson)) 1
+                            Set psRowId to (SerializeRowID (GetRowID (RefTable (SalesPerson))))
+                        End
+
+                        Send NavigatePath
+                    End_Procedure
+
+                    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                        Forward Send OnGetNavigateForwardData (&NavigateData) hoToView
+
+                        Get psRowId to NavigateData.sRowID
+                        Move (RefTable (SalesPerson)) to NavigateData.iTable
+                    End_Procedure
+
+                    WebSetResponsive pbShowToolbar rmTablet to False
+                End_Object
+            End_Object
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            WebRegisterPath ntNavigateForward oSalespersonOverviewReportResults
+
+            Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                Get NamedValueAdd NavigateData.NamedValues "ReportObject" (oReport) to NavigateData.NamedValues
+            End_Procedure
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+        End_Object
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Integer eMode
+
+                WebGet peMode of ghoWebApp to eMode
+                If (eMode >= rmMobile) Begin
+                    Send PrintReport of oMobileDeviceViewer
+                End
+                Else Begin
+                    Send PrintReport of oMainPanelViewer
+                End
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    // Respond to this event to hide or show the controls that can be used to change the results
+    // of the report.
+    // In a mobile landscape mode there is not enough space to show both the options and order by controls and the report results
+    // and thus the results will be shown in a new window.
+    // In a mobile portrait mode there would not be enough space to show the full height of the two group objects with options
+    // and order by controls together with the results and we use the webaccordioncontainer/cards to make space.
+    // In all other situations the view has enough size for the controlling options and the results
+    Procedure OnResizeWindow Integer iWindowWidth Integer iWindowHeight
+        Integer eMode
+
+        Forward Send OnResizeWindow iWindowWidth iWindowHeight
+
+        WebGet peMode of ghoWebApp to eMode
+        Case Begin
+            Case (eMode = rmMobilePortrait)
+                WebSet pbRender of oMainPanelOptionsGroup to False
+                WebSet pbRender of oMainPanelSortOrderGroup to False
+                WebSet pbRender of oMainPanelViewer to False
+                WebSet pbRender of oMobileDeviceContainer to True
+                WebSet pbRender of oRunReportMenuItem to False
+                Send Show of oMobileDeviceResultsCard
+                Send RunReport of oMainPanel
+                Case Break
+            Case (eMode = rmMobileLandscape)
+                WebSet pbRender of oMainPanelOptionsGroup to True
+                WebSet pbRender of oMainPanelSortOrderGroup to True
+                WebSet pbRender of oRunReportMenuItem to True
+                WebSet pbRender of oMainPanelViewer to False
+                WebSet pbRender of oMobileDeviceContainer to False
+                Case Break
+            Case Else
+                WebSet pbRender of oMobileDeviceContainer to False
+                WebSet pbRender of oMainPanelOptionsGroup to True
+                WebSet pbRender of oMainPanelSortOrderGroup to True
+                WebSet pbRender of oRunReportMenuItem to False
+                WebSet pbRender of oMainPanelViewer to True
+                Send RunReport of oMainPanel
+        Case End
+    End_Procedure
+End_Object

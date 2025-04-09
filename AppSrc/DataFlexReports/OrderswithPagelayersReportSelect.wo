@@ -1,0 +1,315 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebGroup.pkg
+Use cWebForm.pkg
+Use cWebEdit.pkg
+Use cWebRadio.pkg
+Use cWebCombo.pkg
+Use cWebCheckBox.pkg
+Use cWebLabel.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRAPI.Pkg
+
+// This example shows how to make use of page layers in a report. With a page layer you simulate pre-printed forms or skip
+// pre-printed forms and make customer based backgrounds. In this example you can choose between a Data Access page layer, an
+// ACME inc page layer and no page layer and with or without a "approved" stamp. To show more of what page layers can do the
+// user can select between the English and Dutch language.
+
+// The user must either select a customer or an order to be used. When selecting a customer the result will be N orders with
+// the page layer selection. When selecting an order the result will be 1 order only. When selecting a customer and an order
+// make sure they belong to eachother.
+
+// The user can choose the sort order of the detail lines in the report.
+
+// All selection criteria and options are passed to the results view via the NamedValues member of the NavigateData parameter
+// of the OnGetNavigateForwardData event
+
+Object oOrderswithPagelayersReportSelect is a cWebView
+    Set psCaption to "Orders with Pagelayers"
+    Set pbShowCaption to False
+    Set peWebViewStyle to wvsDrillDown
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oSelectionsGroup is a cWebGroup
+            Set psCaption to "Selections"
+            Set piColumnCount to 12
+
+            Object oOrderHeaderOrderNumber is a cWebForm
+                Set piColumnSpan to 2
+                Set peLabelPosition to lpTop
+                Set peLabelAlign to alignLeft
+                Set psLabel to "Order"
+                Set psToolTip to "Enter/select an order number."
+                Set peDatatype to typeNumber
+                Set piMaxLength to 10
+                Set pbPromptButton to True
+
+                WebSetResponsive piColumnSpan rmMobilePortrait to 6
+                WebSetResponsive piColumnSpan rmMobileLandscape to 3
+                
+                WebRegisterPath ntNavigateForward oSelectOrder
+
+                Procedure OnPrompt
+                    Send NavigatePath
+                End_Procedure
+
+                Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                    Move nfFromChild to NavigateData.eNavigateType
+                End_Procedure
+
+                Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                    Boolean bFound
+                    RowID riTable
+
+                    Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                    If (not (IsNullRowId (riTable))) Begin
+                        Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                        WebSet psValue to OrderHeader.Order_Number
+                    End
+                End_Procedure
+            End_Object
+
+            Object oOrderHeaderCustomerNumber is a cWebForm
+                Set piColumnSpan to 2
+                Set peLabelPosition to lpTop
+                Set peLabelAlign to alignLeft
+                Set psLabel to "Customer"
+                Set psToolTip to "Enter/select a customer number."
+                Set peDatatype to typeNumber
+                Set piMaxLength to 10
+                Set pbPromptButton to True
+                Set piColumnIndex to 2
+
+                WebSetResponsive piColumnIndex rmMobilePortrait to 6
+                WebSetResponsive piColumnIndex rmMobileLandscape to 3
+
+                WebSetResponsive piColumnSpan rmMobilePortrait to 6
+                WebSetResponsive piColumnSpan rmMobileLandscape to 3
+
+                WebRegisterPath ntNavigateForward oSelectCustomer
+
+                Procedure OnPrompt
+                    Send NavigatePath
+                End_Procedure
+
+                Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                    Move nfFromChild to NavigateData.eNavigateType
+                End_Procedure
+
+                Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                    Boolean bFound
+                    RowID riTable
+
+                    Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                    If (not (IsNullRowId (riTable))) Begin
+                        Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                        WebSet psValue to Customer.Customer_Number
+                    End
+                End_Procedure
+            End_Object
+        End_Object
+
+        Object oOptionsGroup is a cWebGroup
+            Set psCaption to "PageLayer Options"
+            Set piColumnCount to 12
+
+            Object oPageLayerLogoParameterForm is a cWebCombo
+                Set psLabel to "PageLayer"
+                Set peLabelAlign to alignLeft
+                Set piLabelOffset to 80
+                Set piColumnSpan to 6
+                Set psToolTip to 'Select a PageLayer'
+                Set pbServerOnChange to True
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+
+                Procedure OnChange String sNewValue String sOldValue
+                    WebSet pbEnabled of oPageLayerColorParameterForm to (sNewValue <> "3")
+                End_Procedure
+
+                Procedure OnFill
+                    Send AddComboItem 1 "Data Access Europe"
+                    Send AddComboItem 2 "ACME Inc"
+                    Send AddComboItem 3 "None (Use of Preprinted Sheets)"
+                End_Procedure
+
+                Set psValue to 1
+            End_Object
+
+            Object oPageLayerColorParameterForm is a cWebCombo
+                Set psLabel to "Color"
+                Set peLabelAlign to alignLeft
+                Set piLabelOffset to 80
+                Set piColumnSpan to 6
+                Set piColumnIndex to 0
+                Set psToolTip to 'Select a Schema'
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+
+                Procedure OnFill
+                    Send AddComboItem 1 "Gray Approved"
+                    Send AddComboItem 2 "Gray"
+                End_Procedure
+
+                Set psValue to 1
+            End_Object
+
+            Object oPageLayerLanguageParameterForm is a cWebCombo
+                Set psLabel to "Language"
+                Set peLabelAlign to alignLeft
+                Set piLabelOffset to 80
+                Set piColumnSpan to 6
+                Set piColumnIndex to 0
+                Set psToolTip to 'Select a Language'
+                Set pbServerOnChange to True
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+
+                Procedure OnFill
+                    Send AddComboItem "EN" "English"
+                    Send AddComboItem "NL" "Dutch"
+                End_Procedure
+
+                Set psValue to "EN"
+            End_Object
+        End_Object
+
+        Object oSortOrderGroup is a cWebGroup
+            Set psCaption to "Order By:"
+            Set piColumnCount to 12
+
+            Object oSortOnCombo is a cWebCombo
+                Set piColumnSpan to 4
+                Set pbShowLabel to False
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+
+                Procedure OnFill
+                    Send AddComboItem "{OrderDetail.Detail_Number}" "Detail Number"
+                    Send AddComboItem "{Inventory.Item_Id}" "Inventory Item ID"
+                    Send AddComboItem "{Inventory.Description}" "Inventory Description"
+                    Send AddComboItem "{OrderDetail.Qty_Ordered}" "Quantity Ordered"
+                    Send AddComboItem "{OrderDetail.Extended_Price}" "Extended Price"
+                    Send AddComboItem "{OrderDetail.Price}" "Price"
+                End_Procedure
+
+                Set psValue to "{OrderDetail.Detail_Number}"
+            End_Object
+
+            Object oSortDescending is a cWebCheckBox
+                Set piColumnIndex to 4
+                Set piColumnSpan to 0
+                Set psCaption to "Descending"
+
+                WebSetResponsive piColumnIndex rmMobile to 0
+            End_Object
+        End_Object
+
+        Object oRunButton is a cWebButton
+            Set psCaption to "Run Report"
+            Set piColumnSpan to 2
+
+            WebSetResponsive pbRender rmTablet to False
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+    
+    WebRegisterPath ntNavigateForward oOrderswithPagelayersReportResults
+
+    Procedure RunReport
+        String sCustomerNumber sOrderNumber
+
+        WebGet psValue of oOrderHeaderCustomerNumber to sCustomerNumber
+        WebGet psValue of oOrderHeaderOrderNumber to sOrderNumber
+
+        If (sOrderNumber <> "" or sCustomerNumber <> "") Begin
+            Send NavigatePath
+        End
+        Else Begin
+            Send ShowInfoBox "You Need to Enter/Select Either a Customer or an Order Number"
+        End
+    End_Procedure
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData
+        String sValue sReportId
+        Boolean bSortDescending
+
+        WebGet psValue of oOrderHeaderOrderNumber to sValue
+        If (sValue <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "OrderHeaderOrderNumber" sValue to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "OrderHeaderOrderNumberMode" C_drEqual to NavigateData.NamedValues
+        End
+
+        WebGet psValue of oOrderHeaderCustomerNumber to sValue
+        If (sValue <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "OrderHeaderCustomerNumber" sValue to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "OrderHeaderCustomerNumberMode" C_drEqual to NavigateData.NamedValues
+        End
+
+        WebGet psValue of oSortOnCombo to sValue
+        Get NamedValueAdd NavigateData.NamedValues "SortField" sValue to NavigateData.NamedValues
+
+        Get GetChecked of oSortDescending to bSortDescending
+        If (bSortDescending) Begin
+            Get NamedValueAdd NavigateData.NamedValues "SortDirection" C_drDescending to NavigateData.NamedValues
+        End
+        Else Begin
+            Get NamedValueAdd NavigateData.NamedValues "SortDirection" C_drAscending to NavigateData.NamedValues
+        End
+
+        WebGet psValue of oPageLayerLogoParameterForm to sValue
+        If (sValue = "") Begin
+            Move "1" to sValue
+        End
+        Get NamedValueAdd NavigateData.NamedValues "CorporateLogoNum" sValue to NavigateData.NamedValues
+
+        WebGet psValue of oPageLayerColorParameterForm to sValue
+        If (sValue = "") Begin
+            Move "2" to sValue
+        End
+        Get NamedValueAdd NavigateData.NamedValues "PageLayerNum" sValue to NavigateData.NamedValues
+
+        WebGet psValue of oPageLayerLanguageParameterForm to sValue
+        If (sValue = "") Begin
+            Move "EN" to sValue
+        End
+        Get NamedValueAdd NavigateData.NamedValues "Language" sValue to NavigateData.NamedValues
+    End_Procedure
+End_Object

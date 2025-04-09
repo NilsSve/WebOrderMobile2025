@@ -1,0 +1,215 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebColumn.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+Use cWebColumnImage.pkg
+Use cWebLabel.pkg
+
+Use cCustomerDataDictionary.dd
+
+Use cDRReport.pkg
+
+// This webview is a modified customer select webview. For each row from the customer table the oReport object is invoked
+// to quickly create a QR code export file. The report itself uses RDS as data-source and the QR code contains the customer
+// name, address, city and zipcode information. The JPG files are always generated, the system does not check if the file
+// already exists or not; this to avoid the data inside the QR code is out of date.
+
+Object oSelectCustomerWithQRCode is a cWebView
+    Set psCaption to "Customers"
+    Set piMaxWidth to 1024
+    Set piColumnCount to 6
+    Set peViewType to vtSelect
+    Set pbShowCaption to False
+    Set psStateViewName to "Customers"
+
+    Object oReport is a cDRReport
+        Set psReportName to "QRCodePrinting.dr"
+
+        Procedure OnInitializeReport
+            drImageExportOptions DRExportOptions
+
+            Move C_drJPEG to DRExportOptions.iImageType
+            Move False to DRExportOptions.bMultiPage
+            Move 1 to DRExportOptions.iPage
+            Set pImageExportOptions to DRExportOptions
+        End_Procedure
+    End_Object
+
+    WebSetResponsive piColumnCount rmTabletPortrait to 3
+
+    Object oCustomerDataDictionary is a cCustomerDataDictionary
+    End_Object
+
+    Set Main_DD to oCustomerDataDictionary
+    Set Server to oCustomerDataDictionary
+
+    Object oList is a cWebList
+        Set piColumnSpan to 0
+        Set pbServerOnRowClick to True
+        Set pbFillHeight to True
+        Set psCSSClass to "MobileList"
+        Set piSortColumn to 0
+        Set pbShowHeader to False
+        Set pbAllowDeleteRow to True
+
+        Object oCustomerName is a cWebColumn
+            Entry_Item Customer.Name
+            Set psCaption to "Customer Name"
+            Set piWidth to 315
+            Set psCSSClass to "RowCaption"
+            Set piListColSpan to 3
+        End_Object
+
+        Object oQRCodeColumn is a cWebColumnImage
+            Set piWidth to 90
+            Set pbFixedWidth to True
+            Set psCaption to "QRCode"
+            Set pbResizable to False
+            Set piListRowSpan to 3
+            Set peAlign to alignRight
+            Set pbDynamic to True
+
+            Procedure OnDefineImages
+                Variant[][] vData
+                String sReportId sCacheFolder sFileName sURL
+
+                Forward Send OnDefineImages
+
+                Get OpenReport of oReport to sReportId
+                If (sReportId <> "") Begin
+                    Move (Trim (Customer.Name) + Character(13) + Character(10) + Trim (Customer.Address) + Character(13) + Character(10) + Trim (Customer.City) * Rtrim (Customer.Zip)) to vData[0][0]
+                    Send TableData of oReport sReportId 0 vData
+                    Get ReportsCacheFolder of oReport to sCacheFolder
+                    Move (sCacheFolder - "CustomerQR-" - String (Customer.Customer_Number) - '.jpg') to sFileName
+                    Send ExportReport of oReport C_drImage sFileName
+                    Get DownloadURL of ghoWebResourceManager sFileName to sURL
+
+                    Send AddImage sURL
+                End
+            End_Procedure
+        End_Object
+
+        Object oCustomerCustomer_Number is a cWebColumn
+            Entry_Item Customer.Customer_Number
+            Set psCaption to "Number"
+            Set piWidth to 32
+            Set pbFixedWidth to True
+            Set peAlign to alignLeft
+            Set pbNewLine to True
+            Set psCSSClass to "RowDetail"
+        End_Object
+
+        Object oCustomer_City is a cWebColumn
+            Set psCaption to "City, State, Zip"
+            Set piWidth to 50
+            Set psCSSClass to "RowDetail"
+
+            Procedure OnSetCalculatedValue String ByRef sValue
+                Move (Customer.City - "," * Customer.State - "," * Customer.Zip) to sValue
+            End_Procedure
+        End_Object
+
+        Object oCustomerBalance is a cWebColumn
+            Set psCaption to "Balance Due"
+            Set piWidth to 180
+            Set pbFixedWidth to True
+            Set psCSSClass to "RowDetail"
+            Set pbNewLine to True
+            Set piListColSpan to 2
+            Set peAlign to alignLeft
+
+            Procedure OnSetCalculatedValue String ByRef sValue
+                Move (SFormat ("Balance Due: %1", FormatCurrency(Customer.Balance, 2))) to sValue
+            End_Procedure
+        End_Object
+
+        Procedure OnRowClick String sRowID
+            tWebNavigateData NavigateData
+
+            Get GetNavigateData to NavigateData
+            Case Begin
+                Case (NavigateData.eNavigateType=nfFromChild)
+                Case (NavigateData.eNavigateType=nfFromMain)
+                    // a child or main lookup
+                    Send NavigateClose Self
+                    Case Break
+                Case (NavigateData.eNavigateType=nfFromParent)
+                    // not used yet
+                    Case Break
+                Case Else
+                    // not used yet
+            Case End
+        End_Procedure
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Object oSearch is a cWebMenuItem
+            Set psCaption to "Search"
+            Set psCSSClass to "WebPromptMenuItem"
+
+            Procedure OnClick
+                Send Search of oList
+            End_Procedure
+        End_Object
+
+        Object oSearchOrderCustomerName is a cWebMenuItem
+            Set psCaption to "List by Name"
+            Set peActionDisplay to adMenu
+            Set pbBeginGroup to True
+
+            Procedure OnClick
+                WebSet piSortColumn of oList to 0
+                WebSet pbReverseOrdering of oList to False
+                Send GridRefresh of oList
+            End_Procedure
+        End_Object
+
+        Object oSearchOrderCustomerNumber is a cWebMenuItem
+            Set psCaption to "List by Order Number"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                WebSet piSortColumn of oList to 2
+                WebSet pbReverseOrdering of oList to False
+                Send GridRefresh of oList
+            End_Procedure
+        End_Object
+
+        Object oSearchOrderBalance is a cWebMenuItem
+            Set psCaption to "List by Balance Due"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                WebSet piSortColumn of oList to 4
+                WebSet pbReverseOrdering of oList to True
+                Send GridRefresh of oList
+            End_Procedure
+        End_Object
+
+        Object oFindTop is a cWebMenuItem
+            Set psCaption to "Top"
+            Set peActionDisplay to adMenu
+            Set pbBeginGroup to True
+
+            Procedure OnClick
+                Send MoveToFirstRow of oList
+            End_Procedure
+        End_Object
+
+        Object oFindLast is a cWebMenuItem
+            Set psCaption to "Bottom"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send MoveToLastRow of oList
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetBreadcrumbCaption "Select Customer"
+        Send SetHeaderCaption "Customers"
+    End_Procedure
+End_Object

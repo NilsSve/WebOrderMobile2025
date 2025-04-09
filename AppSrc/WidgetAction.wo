@@ -1,0 +1,110 @@
+﻿Use cWebWidget.pkg
+Use cWebButton.pkg
+Use cWebView.pkg
+Use WidgetActionConfig.wo
+
+Composite cWidgetAction is a cWebWidget
+    Set psWidgetCaption to "Action"
+    Set psWidgetDescription to "Perform a navigation operation"
+    Set psWidgetName to "WidgetAction"
+    Set piRowSpan to 2
+    Set piColumnSpan to 2
+    Set piDefaultColSpan to 2
+    Set piDefaultRowSpan to 2
+    Set peLayoutType to ltGrid
+    Set psRowHeights to "0/1fr"
+    Set phoConfigWizard to oWidgetActionConfig
+    Set pbShowBorder to True
+    Set pbShowCaption to False
+    
+    { WebProperty=Server }
+    Property String psAction "CustomerQuery"
+    
+    Object oActionBtn is a cWebButton
+        Set psCaption to "Customer Query"
+        Set psCSSClass to ""
+        Set pbFillHeight to True
+        
+        Procedure OnClick
+            Send PerformAction
+        End_Procedure
+    End_Object    
+    
+    
+    WebRegisterPath ntNavigateForwardCustom oSelectOrdersByCustomer
+    WebRegisterPath ntNavigateForwardCustom oSelectOrder
+    WebRegisterPath ntNavigateForwardCustom oSelectSalesPerson
+    WebRegisterPath ntNavigateForwardCustom oZoomCustomer
+    WebRegisterPath ntNavigateForwardCustom oZoomOrder
+    WebRegisterPath ntNavigateForwardCustom oDemoGrouping
+                
+    Procedure PerformAction
+        String sAction
+        
+        WebGet psAction to sAction
+        
+        Case Begin
+            Case (sAction = "CustomerQuery")
+                Send NavigateForward of oSelectOrdersByCustomer Self
+                Break
+            Case (sAction = "OrdersQuery")
+                Send NavigateForward of oSelectOrder Self
+                Break
+            Case (sAction = "SalesPersonQuery")
+                Send NavigateForward of oSelectSalesPerson Self
+                Break
+            Case (sAction = "NewCustomer")
+                Send NavigateForward of oZoomCustomer Self
+                Break
+            Case (sAction = "NewOrder")
+                Send NavigateForward of oZoomOrder Self
+                Break
+            Case (sAction = "ProductQuery")
+                Send NavigateForward of oDemoGrouping Self
+                Break
+            Case Else
+                Error DFERR_PROGRAM "Unimplemented action"
+        Case End
+    End_Procedure
+
+    Procedure OnGetConfigurableProps tWidgetConfigProp[]  ByRef aConfigurableProps
+        Forward Send OnGetConfigurableProps (&aConfigurableProps)
+        
+        Get CreateConfigurableProp Self (RefFunc(psAction)) to aConfigurableProps[-1]
+    End_Procedure
+    
+    Procedure OnInitializeWidget
+        Send OnWidgetPropsChanged
+    End_Procedure
+
+    Procedure OnWidgetPropsChanged
+        String sAction
+        
+        Forward Send OnWidgetPropsChanged
+        
+        WebGet psAction to sAction
+        
+        Case Begin
+            Case (sAction = "CustomerQuery")
+                WebSet psCaption of oActionBtn to "Customer Query"
+                Break
+            Case (sAction = "OrdersQuery")
+                WebSet psCaption of oActionBtn to "Orders Query"
+                Break
+            Case (sAction = "SalesPersonQuery")
+                WebSet psCaption of oActionBtn to "SalesPerson Query"
+                Break
+            Case (sAction = "NewCustomer")
+                WebSet psCaption of oActionBtn to "New Customer"
+                Break
+            Case (sAction = "NewOrder")
+                WebSet psCaption of oActionBtn to "New Order"
+                Break
+            Case (sAction = "ProductQuery")
+                WebSet psCaption of oActionBtn to "Product Query"
+                Break
+            Case Else
+                Error DFERR_PROGRAM "Unimplemented action"
+        Case End
+    End_Procedure
+End_Composite

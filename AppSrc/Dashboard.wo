@@ -1,0 +1,139 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebForm.pkg 
+Use cWebWidgetContainer.pkg
+Use cWebDragDropHelper.pkg
+Use cWebAppUserDataDictionary.dd
+Use cWebWidgetConfigurationWizard.pkg
+Use cWebButton.pkg
+
+Use WidgetCustomers.wo
+Use WidgetOrders.wo
+Use WidgetWelcomeTile.wo
+Use WidgetAction.wo
+
+
+Use cWebWidgetPalette.pkg
+
+Object oDashboard is a cWebView
+    Set psCaption to "Dashboard"
+    Set pbServerOnShow to True
+    Set pbFillHeight to True
+    Set peViewType to vtUndefined
+    Set pbShowCaption to False
+    Set peStateMode to vsmOff   // 
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oWidgetContainer is a cWebWidgetContainer
+            Set pbUseCustomConfigurationStorage to False
+            Set piColumnSpan to 12
+            Set pbServerOnToggleEditMode to True
+            
+            Procedure OnRegisterWidgets
+                Send RegisterWidget (RefClass(cWidgetCustomers))
+                Send RegisterWidget (RefClass(cWidgetOrders))
+            End_Procedure
+           
+            Object oWelcomeWidget is a cWidgetWelcomeTile
+                Set piColumnSpan to 2
+                Set piRowSpan to 2
+                Set piColumnIndex to 0
+                Set piRowIndex to 0
+                
+                WebSetResponsive piColumnSpan rmMobile to 6
+            End_Object
+            
+            Object oCustQueryWidget is a cWidgetAction
+                Set piColumnIndex to 2
+                Set piColumnSpan to 2
+                Set piRowIndex to 0
+                Set piRowSpan to 2
+                Set psAction to "CustomerQuery"
+                
+                WebSetResponsive piColumnIndex rmMobile to 6
+                WebSetResponsive piColumnSpan rmMobile to 6
+            End_Object
+            
+            Object oFindSalesPersonWidget is a cWidgetAction
+                Set piColumnIndex to 2
+                Set piColumnSpan to 2
+                Set piRowIndex to 2
+                Set piRowSpan to 2
+                Set psAction to "SalesPersonQuery"
+                
+                WebSetResponsive piRowIndex rmMobile to 2
+                WebSetResponsive piColumnIndex rmMobile to 0
+                WebSetResponsive piColumnSpan rmMobile to 6
+            End_Object
+                        
+            Object oNewOrderWidget is a cWidgetAction
+                Set piColumnIndex to 0
+                Set piColumnSpan to 2
+                Set piRowIndex to 2
+                Set piRowSpan to 2
+                Set psAction to "NewOrder"
+                
+                WebSetResponsive piColumnSpan rmMobile to 6
+                WebSetResponsive piColumnIndex rmMobile to 6
+                WebSetResponsive piRowIndex rmMobile to 2
+            End_Object
+           
+            Object oCustWidget is a cWidgetCustomers
+                Set piColumnIndex to 8
+                Set piColumnSpan to 4
+                Set piRowIndex to 0
+                Set piRowSpan to 4
+                
+                WebSetResponsive piRowIndex rmMobile to 4
+                WebSetResponsive piColumnIndex rmMobile to 0
+                WebSetResponsive piColumnSpan rmMobile to 12
+            End_Object
+            
+            Object oOrderWidget is a cWidgetOrders
+                Set piColumnSpan to 4
+                Set piColumnIndex to 4
+                Set piRowSpan to 4
+                Set piRowIndex to 0
+                
+                WebSetResponsive piRowIndex rmMobile to 8
+                WebSetResponsive piColumnIndex rmMobile to 0
+                WebSetResponsive piColumnSpan rmMobile to 12
+            End_Object
+
+            Procedure OnToggleEditMode Boolean bEdit
+                Forward Send OnToggleEditMode bEdit
+                
+                WebSet pbRender of oWidgetsPanel to bEdit
+            End_Procedure
+            
+        End_Object
+
+        
+
+    End_Object
+    
+    Object oWidgetsPanel is a cWebPanel
+        Set piWidth to 250
+        Set pbRender to False
+        Set peRegion to prRight
+        Set psCSSClass to "WidgetPanel"
+        
+        Object oWlWidgets is a cWebWidgetPalette
+            Set piColumnSpan to 2
+            Set piColumnIndex to 10
+            Set phoWidgetContainer to oWidgetContainer
+        End_Object
+    End_Object
+    
+
+    Procedure OnLoad
+        Forward Send OnLoad
+        
+        Send LoadConfiguration of oWidgetContainer
+        Send GridRefresh of oWlWidgets
+    End_Procedure
+
+End_Object
+

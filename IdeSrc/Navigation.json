@@ -1,0 +1,628 @@
+{
+   "Projects": [
+     {
+       "nZoom": 0.4,
+       "nPositionX": -4123.49951172,
+       "nPositionY": 1860.49987793,
+       "nWidth": 3282.49975586,
+       "nHeight": 2522.50012207,
+       "sProject": "WebApp.src",
+       "bShowWebApp": false,
+       "bShowHidden": false,
+       "Elements": [
+         {
+           "Name": "cWidgetAction",
+           "Position": {
+             "sX": "-2325",
+             "sY": "3625"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "cWidgetCustomers",
+           "Position": {
+             "sX": "-3075",
+             "sY": "3800"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "cWidgetOrders",
+           "Position": {
+             "sX": "-3075",
+             "sY": "3625"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "cWidgetWelcomeTile",
+           "Position": {
+             "sX": "-2700",
+             "sY": "3625"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oCustomerListReportResults",
+           "Position": {
+             "sX": "-750",
+             "sY": "3175"
+           },
+           "TabColor": {
+             "sColorDM": "#672606",
+             "sColorLM": "#FFBFA3"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oCustomerListReportSelect",
+           "Position": {
+             "sX": "-1100",
+             "sY": "2925"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oCustomerOrdersReportResults",
+           "Position": {
+             "sX": "-750",
+             "sY": "2825"
+           },
+           "TabColor": {
+             "sColorDM": "#341304",
+             "sColorLM": "#FFDFD1"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oCustomerOrdersReportSelect",
+           "Position": {
+             "sX": "-1100",
+             "sY": "2650"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDashboard",
+           "Position": {
+             "sX": "-4625",
+             "sY": "3675"
+           },
+           "TabColor": {
+             "sColorDM": "#002C68",
+             "sColorLM": "#97C6FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoCSSClasses",
+           "Position": {
+             "sX": "-4900",
+             "sY": "4000"
+           },
+           "TabColor": {
+             "sColorDM": "#002C68",
+             "sColorLM": "#97C6FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoCheckboxRadio",
+           "Position": {
+             "sX": "-4625",
+             "sY": "4200"
+           },
+           "TabColor": {
+             "sColorDM": "#672606",
+             "sColorLM": "#FFBFA3"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoCustomFwdNavigations",
+           "Position": {
+             "sX": "-3675",
+             "sY": "4350"
+           },
+           "TabColor": {
+             "sColorDM": "#9B3904",
+             "sColorLM": "#FF9F74"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoDialogs",
+           "Position": {
+             "sX": "-4900",
+             "sY": "4100"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoExpandPanel",
+           "Position": {
+             "sX": "-3075",
+             "sY": "3025"
+           },
+           "TabColor": {
+             "sColorDM": "#064F26",
+             "sColorLM": "#A3E8C0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoGeoLocation",
+           "Position": {
+             "sX": "-4900",
+             "sY": "4200"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoGrouping",
+           "Position": {
+             "sX": "-2200",
+             "sY": "2425"
+           },
+           "TabColor": {
+             "sColorDM": "#06763A",
+             "sColorLM": "#74DCA0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoSliders",
+           "Position": {
+             "sX": "-4625",
+             "sY": "4000"
+           },
+           "TabColor": {
+             "sColorDM": "#002C68",
+             "sColorLM": "#97C6FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oDemoSwipableCards",
+           "Position": {
+             "sX": "-4625",
+             "sY": "4100"
+           },
+           "TabColor": {
+             "sColorDM": "#672606",
+             "sColorLM": "#FFBFA3"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oExportReportWebView",
+           "Position": {
+             "sX": "-500",
+             "sY": "2325"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oInventoryLabelReport",
+           "Position": {
+             "sX": "-2750",
+             "sY": "2850"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oLogin",
+           "Position": {
+             "sX": "-4350",
+             "sY": "4200"
+           },
+           "TabColor": {
+             "sColorDM": "#002C68",
+             "sColorLM": "#97C6FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oOrderListReportResults",
+           "Position": {
+             "sX": "-225",
+             "sY": "2825"
+           },
+           "TabColor": {
+             "sColorDM": "#CE4C01",
+             "sColorLM": "#FF7F42"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oOrderListReportSelect",
+           "Position": {
+             "sX": "125",
+             "sY": "2650"
+           },
+           "TabColor": {
+             "sColorDM": "#0058CF",
+             "sColorLM": "#2B8CFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oOrdersAgeCreditandBalanceOverviewReportResults",
+           "Position": {
+             "sX": "-750",
+             "sY": "3425"
+           },
+           "TabColor": {
+             "sColorDM": "#672606",
+             "sColorLM": "#FFBFA3"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oOrdersAgeCreditandBalanceOverviewReportSelect",
+           "Position": {
+             "sX": "-1100",
+             "sY": "3575"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oOrderswithPagelayersReportResults",
+           "Position": {
+             "sX": "-225",
+             "sY": "3175"
+           },
+           "TabColor": {
+             "sColorDM": "#CE4C01",
+             "sColorLM": "#FF7F42"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oOrderswithPagelayersReportSelect",
+           "Position": {
+             "sX": "-1925",
+             "sY": "4075"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSalesPerSalesPersonPerUSAStateReportResults",
+           "Position": {
+             "sX": "-225",
+             "sY": "2500"
+           },
+           "TabColor": {
+             "sColorDM": "#CE4C01",
+             "sColorLM": "#FF7F42"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSalesPerSalesPersonPerUSAStateReportSelect",
+           "Position": {
+             "sX": "125",
+             "sY": "2325"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSalesPersonWebLookup",
+           "Position": {
+             "sX": "-4350",
+             "sY": "4100"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSalespersonOverviewReport",
+           "Position": {
+             "sX": "-2850",
+             "sY": "1925"
+           },
+           "TabColor": {
+             "sColorDM": "#002C68",
+             "sColorLM": "#97C6FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSalespersonOverviewReportResults",
+           "Position": {
+             "sX": "-3250",
+             "sY": "2150"
+           },
+           "TabColor": {
+             "sColorDM": "#002C68",
+             "sColorLM": "#97C6FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectCustomer",
+           "Position": {
+             "sX": "-1525",
+             "sY": "3150"
+           },
+           "TabColor": {
+             "sColorDM": "#06763A",
+             "sColorLM": "#74DCA0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectCustomerWithQRCode",
+           "Position": {
+             "sX": "-1350",
+             "sY": "3775"
+           },
+           "TabColor": {
+             "sColorDM": "#03C560",
+             "sColorLM": "#03C560"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectInventory",
+           "Position": {
+             "sX": "-2700",
+             "sY": "2425"
+           },
+           "TabColor": {
+             "sColorDM": "#06763A",
+             "sColorLM": "#74DCA0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectOrder",
+           "Position": {
+             "sX": "-3775",
+             "sY": "2850"
+           },
+           "TabColor": {
+             "sColorDM": "#03C560",
+             "sColorLM": "#03C560"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectOrdersByCustomer",
+           "Position": {
+             "sX": "-3075",
+             "sY": "3350"
+           },
+           "TabColor": {
+             "sColorDM": "#052713",
+             "sColorLM": "#D1F3E0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectSalesPerson",
+           "Position": {
+             "sX": "-4050",
+             "sY": "2525"
+           },
+           "TabColor": {
+             "sColorDM": "#03C560",
+             "sColorLM": "#03C560"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectStandardComments",
+           "Position": {
+             "sX": "-2725",
+             "sY": "4225"
+           },
+           "TabColor": {
+             "sColorDM": "#06763A",
+             "sColorLM": "#74DCA0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectValidationValue",
+           "Position": {
+             "sX": "-3025",
+             "sY": "4225"
+           },
+           "TabColor": {
+             "sColorDM": "#03C560",
+             "sColorLM": "#03C560"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oSelectVendor",
+           "Position": {
+             "sX": "-1950",
+             "sY": "2875"
+           },
+           "TabColor": {
+             "sColorDM": "#064F26",
+             "sColorLM": "#A3E8C0"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oTopNSalespersonsReportResults",
+           "Position": {
+             "sX": "-750",
+             "sY": "2500"
+           },
+           "TabColor": {
+             "sColorDM": "#9B3904",
+             "sColorLM": "#FF9F74"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oTopNSalespersonsReportSelect",
+           "Position": {
+             "sX": "-1100",
+             "sY": "2325"
+           },
+           "TabColor": {
+             "sColorDM": "#006EFF",
+             "sColorLM": "#006EFF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oWebApp",
+           "Position": {
+             "sX": "-5375",
+             "sY": "4550"
+           },
+           "TabColor": {
+             "sColorDM": "#00429B",
+             "sColorLM": "#63A9FF"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomCustomer",
+           "Position": {
+             "sX": "-1850",
+             "sY": "3550"
+           },
+           "TabColor": {
+             "sColorDM": "#CE4C01",
+             "sColorLM": "#FF7F42"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomCustomerStatusHelp",
+           "Position": {
+             "sX": "-3325",
+             "sY": "4225"
+           },
+           "TabColor": {
+             "sColorDM": "#9B3904",
+             "sColorLM": "#FF9F74"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomInventory",
+           "Position": {
+             "sX": "-2450",
+             "sY": "2625"
+           },
+           "TabColor": {
+             "sColorDM": "#9B3904",
+             "sColorLM": "#FF9F74"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomOrder",
+           "Position": {
+             "sX": "-3475",
+             "sY": "2300"
+           },
+           "TabColor": {
+             "sColorDM": "#CE4C01",
+             "sColorLM": "#FF7F42"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomOrderDetail",
+           "Position": {
+             "sX": "-3100",
+             "sY": "2600"
+           },
+           "TabColor": {
+             "sColorDM": "#FF5E00",
+             "sColorLM": "#FF5E00"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomSalesPerson",
+           "Position": {
+             "sX": "-3750",
+             "sY": "1750"
+           },
+           "TabColor": {
+             "sColorDM": "#FF5E00",
+             "sColorLM": "#FF5E00"
+           },
+           "bHidden": false
+         },
+         {
+           "Name": "oZoomVendor",
+           "Position": {
+             "sX": "-1775",
+             "sY": "2425"
+           },
+           "TabColor": {
+             "sColorDM": "#FF5E00",
+             "sColorLM": "#FF5E00"
+           },
+           "bHidden": false
+         }
+       ]
+     }
+   ]
+ }

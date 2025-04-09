@@ -1,0 +1,151 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+Use cWebHtmlBox.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+// This example webview is the second part of the customerlist report. The component contains the report object, which
+// will be invoked from the cWebDRReportViewer class to produce a HTML "stream". The returned String array contains all 
+// pages of the report. The javascript counterpart (previewer.js) shows the result and the user can navigate thru the pages. 
+// The cWebDRReportViewer control allows printing of the report thru the browser and via the action menu the user can select 
+// to export the report to one of the supported formats. 
+// Note that for this the report and the data will be reloaded, reformatted. Theoretically the results can be different 
+// due to changed data in the database.
+
+// Note that the report definition of "customerlist.dr" is different from the report definition of "Customer List.dr" in
+// the Windows order entry example.
+
+Object oCustomerListReportResults is a cWebView
+    Set psCaption to "CustomerList (Results)"
+    Set pbShowCaption to False
+    Set peViewType to vtZoom
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+    Set psStateViewName to "CustomerListResults"
+
+    Object oReport is a cDRReport
+        Set psReportName to "CustomerList.dr"
+
+        Procedure OnInitializeReport
+            Set piReportLanguage '' to LANG_DEFAULT
+
+            Send SetFilters
+            Send SetSortFields
+        End_Procedure
+
+        Procedure SetSortFields
+            tWebNavigateData NavigateData
+            String sReportId sSortField
+            Integer iSortDirection
+
+            Get GetNavigateData to NavigateData
+            Get psReportId to sReportId
+
+            Get NamedValueGet NavigateData.NamedValues "SortDirection" to iSortDirection
+            Get NamedValueGet NavigateData.NamedValues "SortField" to sSortField
+
+            Send AddRecordSortField sReportId sSortField iSortDirection
+        End_Procedure
+
+        Procedure SetFilters
+            String sReportId
+            tWebNavigateData NavigateData
+            Integer[] iCustomerCustomerNumbers iCustomerCustomerNumberModes
+            Integer[] iCustomerNames iCustomerNameModes
+
+            Get psReportId to sReportId
+            Get GetNavigateData to NavigateData
+            Get NamedValueIndex NavigateData.NamedValues "CustomerCustomerNumberFrom" to iCustomerCustomerNumbers[0]
+            Get NamedValueIndex NavigateData.NamedValues "CustomerCustomerNumberFromMode" to iCustomerCustomerNumberModes[0]
+            Get NamedValueIndex NavigateData.NamedValues "CustomerCustomerNumberTo" to iCustomerCustomerNumbers[1]
+            Get NamedValueIndex NavigateData.NamedValues "CustomerCustomerNumberToMode" to iCustomerCustomerNumberModes[1]
+
+            If (iCustomerCustomerNumbers[0] > -1) Begin
+                Send AddFilter sReportId "{Customer.Customer_Number}" NavigateData.NamedValues[(iCustomerCustomerNumberModes[0])].sValue NavigateData.NamedValues[(iCustomerCustomerNumbers[0])].sValue
+            End
+            If (iCustomerCustomerNumbers[1] > -1) Begin
+                Send AddFilter sReportId "{Customer.Customer_Number}" NavigateData.NamedValues[(iCustomerCustomerNumberModes[1])].sValue NavigateData.NamedValues[(iCustomerCustomerNumbers[1])].sValue
+            End
+
+            Get NamedValueIndex NavigateData.NamedValues "CustomerNameFrom" to iCustomerNames[0]
+            Get NamedValueIndex NavigateData.NamedValues "CustomerNameFromMode" to iCustomerNameModes[0]
+            Get NamedValueIndex NavigateData.NamedValues "CustomerNameTo" to iCustomerNames[1]
+            Get NamedValueIndex NavigateData.NamedValues "CustomerNameToMode" to iCustomerNameModes[1]
+
+            If (iCustomerNames[0] > -1 and iCustomerNameModes[0] > -1) Begin
+                Send AddFilter sReportId "{Customer.Name}" NavigateData.NamedValues[(iCustomerNameModes[0])].sValue NavigateData.NamedValues[(iCustomerNames[0])].sValue
+            End
+            If (iCustomerNames[1] > -1 and iCustomerNameModes[1] > -1) Begin
+                Send AddFilter sReportId "{Customer.Name}" NavigateData.NamedValues[(iCustomerNameModes[1])].sValue NavigateData.NamedValues[(iCustomerNames[1])].sValue
+            End
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+
+            WebSetResponsive piZoom rmMobilePortrait to 45
+            WebSetResponsive piZoom rmMobileLandscape to 75
+            WebSetResponsive piZoom rmTabletPortrait to 100
+            WebSetResponsive piZoom rmTabletLandscape to 125
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+            
+            WebRegisterPath ntNavigateForward oExportReportWebView
+            
+            Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                Integer eExportType
+                
+                Get peExportType of oReport to eExportType
+                Get NamedValueAdd NavigateData.NamedValues "ExportType" eExportType to NavigateData.NamedValues
+            End_Procedure
+            
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetBreadcrumbCaption "Results"
+        Send SetHeaderCaption "CustomerList"
+
+        Send RunReport of oWebMainPanel
+    End_Procedure
+End_Object

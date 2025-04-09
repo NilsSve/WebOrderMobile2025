@@ -1,0 +1,157 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebGroup.pkg
+Use cWebForm.pkg
+Use cWebEdit.pkg
+Use cWebRadio.pkg
+Use cWebCombo.pkg
+Use cWebCheckBox.pkg
+Use cWebLabel.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRAPI.Pkg
+
+// This webview is the first part of a more complex report that calculates the age of the orders in the database.
+
+// Users can make selections here. The results are shown in a second webview. This is done to give the maximum space
+// For the results in a webview.
+
+// Users can select/enter a customer number. The selection uses a modified select component in which each customer
+// contains a QR code that is generated when the row is being shown in the list.
+
+// Special customer select where each line contains a QR code created by DataFlex Reports. The selected customer number
+// and name are shown in the number and name webcontrols.
+Use DataFlexReports\SelectCustomerWithQRCode.wo
+
+Object oOrdersAgeCreditandBalanceOverviewReportSelect is a cWebView
+    Set psCaption to "Orders Age - Credit and Balance Overview"
+    Set pbShowCaption to False
+    Set peWebViewStyle to wvsDrillDown
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oCustomerCustomerNumber Is A cWebForm
+            Set piColumnSpan to 2
+            Set peLabelPosition to lpTop
+            Set peLabelAlign to alignLeft
+            Set psLabel to "Customer Number"
+            Set psToolTip to "Enter or Select a Customer Number."
+            Set peDatatype to typeNumber
+            Set piMaxLength to 10
+            Set pbPromptButton to True
+
+            WebSetResponsive piColumnSpan rmMobilePortrait to 0
+
+            WebRegisterPath ntNavigateForward oSelectCustomerWithQRCode
+
+            Procedure OnPrompt
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                Move nfFromChild to NavigateData.eNavigateType
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Boolean bFound
+                RowId riTable
+
+                Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                If (not (IsNullRowId (riTable))) Begin
+                    Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                    WebSet psValue to Customer.Customer_Number
+                    WebSet psValue of oCustomerNameForm to (Trim (Customer.Name))
+                End
+            End_Procedure
+        End_Object
+
+        Object oCustomerNameForm is a cWebForm
+            Set piColumnSpan to 6
+            Set psLabel to "Name"
+            Set piColumnIndex to 2
+            Set pbEnabled to False
+            Set peLabelPosition to lpTop
+
+            WebSetResponsive piColumnSpan rmMobilePortrait to 0
+            WebSetResponsive piColumnIndex rmMobilePortrait to 0
+        End_Object
+
+        Object oUseZebraStripingParameterCheckbox is a cWebCheckbox
+            Set peLabelAlign to alignLeft
+            Set peLabelPosition to lpTop
+            Set piColumnSpan to 3
+            Set psToolTip to 'Display Each Uneven Row on a Different Background Color'
+            Set piMaxLength to 10
+            Set psCaption to "Zebra Striping"
+
+            WebSetResponsive piColumnSpan rmTablet to 0
+        End_Object
+
+        Object oRunButton is a cWebButton
+            Set psCaption to "Run Report"
+            Set piColumnSpan to 2
+
+            WebSetResponsive pbRender rmTablet to False
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    WebRegisterPath ntNavigateForward oOrdersAgeCreditandBalanceOverviewReportResults
+    
+    Procedure RunReport
+        Send NavigatePath
+    End_Procedure
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData
+        String sCustomerCustomerNumber sReportId
+        Boolean bUseZebraStriping
+
+        Get GetChecked of oUseZebraStripingParameterCheckbox to bUseZebraStriping
+        Get NamedValueAdd NavigateData.NamedValues "UseZebraStriping" bUseZebraStriping to NavigateData.NamedValues
+
+        WebGet psValue of oCustomerCustomerNumber to sCustomerCustomerNumber
+        If (sCustomerCustomerNumber <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "CustomerCustomerNumber" sCustomerCustomerNumber to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "CustomerCustomerNumberMode" C_drEqual to NavigateData.NamedValues
+        End
+    End_Procedure
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetChecked of oUseZebraStripingParameterCheckbox True
+    End_Procedure
+End_Object

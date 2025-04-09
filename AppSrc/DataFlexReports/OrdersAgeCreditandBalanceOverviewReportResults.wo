@@ -1,0 +1,131 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+// This example webview is the second part of the Orders Age report. The component contains the report object, which
+// will be invoked from the cWebDRReportViewer class to produce a HTML "stream". The returned String array contains 
+// all pages of the report. The javascript counterpart (previewer.js) shows the result and the user can navigate thru 
+// the pages. The cWebDRReportViewer control allows printing of the report thru the browser and via the action menu 
+// the user can select to export the report to one of the supported formats. 
+// Note that for this the report and the data will be reloaded, reformatted. Theoretically the results can be different 
+// due to changed data in the database.
+
+// The selection criteria and the option to show/use zebra striping is passed as NamedValues via NavigateData
+
+Object oOrdersAgeCreditandBalanceOverviewReportResults is a cWebView
+    Set psCaption to "Orders Age - Credit and Balance Overview (Results)"
+    Set pbShowCaption to False
+    Set peViewType to vtZoom
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+
+    Object oReport is a cDRReport
+        Set psReportName to "Orders Age - Credit and Balance overview.dr"
+
+        Procedure OnInitializeReport
+            Set piReportLanguage '' to LANG_DEFAULT
+
+            Send SetFilters
+            Send SetSortFields
+            Send SetParameters
+        End_Procedure
+
+        Procedure SetSortFields
+            // You can add sort fields using the AddRecordSortField method and remove sort fields with RemoveAllRecordSortFields.
+        End_Procedure
+
+        Procedure SetFilters
+            String sReportId
+            tWebNavigateData NavigateData
+            Integer iCustomerCustomerNumber iCustomerCustomerNumberMode
+
+            Get psReportId to sReportId
+
+            Get GetNavigateData to NavigateData
+            Get NamedValueIndex NavigateData.NamedValues "CustomerCustomerNumber" to iCustomerCustomerNumber
+            Get NamedValueIndex NavigateData.NamedValues "CustomerCustomerNumberMode" to iCustomerCustomerNumberMode
+
+            If (iCustomerCustomerNumberMode > -1 and iCustomerCustomerNumber > -1) Begin
+                Send AddFilter sReportId "{Customer.Customer_Number}" NavigateData.NamedValues[iCustomerCustomerNumberMode].sValue NavigateData.NamedValues[iCustomerCustomerNumber].sValue
+            End
+        End_Procedure
+
+        // In this routine we find the code that sets the parameter values. The values
+        // for the parameters can be retrieved from an input control or from own coding.
+        Procedure SetParameters
+            String sReportId
+            Integer iParameter
+            Boolean bUseZebraStriping
+            tWebNavigateData NavigateData
+
+            Get GetNavigateData to NavigateData
+
+            Get NamedValueGet NavigateData.NamedValues "UseZebraStriping" to bUseZebraStriping
+            Get psReportId to sReportId
+            Get ParameterIdByName sReportId "UseZebraStriping" to iParameter
+            Set psParameterValue sReportId iParameter to bUseZebraStriping
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+
+            WebSetResponsive piZoom rmMobilePortrait to 45
+            WebSetResponsive piZoom rmMobileLandscape to 75
+            WebSetResponsive piZoom rmTabletPortrait to 100
+            WebSetResponsive piZoom rmTabletLandscape to 125
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+            
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetBreadcrumbCaption "Results"
+        Send SetHeaderCaption "Orders Age - Credit and Balance Overview"
+
+        Send RunReport of oWebMainPanel
+    End_Procedure
+End_Object

@@ -1,0 +1,320 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebGroup.pkg
+Use cWebForm.pkg
+Use cWebEdit.pkg
+Use cWebRadio.pkg
+Use cWebCombo.pkg
+Use cWebCheckBox.pkg
+Use cWebLabel.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRAPI.Pkg
+
+// This example webview is the first part of the simple customerlist report. Users can make selections here. The results
+// are shown in a second webview. This is done to give the maximum space for the results in a webview.
+
+// The controls in this select webview allow selection of a customer number range (from-to customer number) or a customer
+// name range (from-to partial customer name). Users can also indicate the sort order of the list.
+
+// The run report button in the webview will be hidden when running from a mobile device such as a tablet or phone. Running
+// a report is then possible via the run button in the actionbar.
+
+// All selection criteria and options are passed to the results view via the NamedValues member of the NavigateData parameter
+// of the OnGetNavigateForwardData event
+
+Object oCustomerListReportSelect is a cWebView
+    Set psCaption to "CustomerList"
+    Set pbShowCaption to False
+    Set peWebViewStyle to wvsDrillDown
+    Set psStateViewName to "CustomerListSelect"
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oCustomerCustomerNumberGroup is a cWebGroup
+            Set psCaption to "Customer Number:"
+            Set piColumnCount to 12
+            Set piColumnSpan to 3
+
+            WebSetResponsive piColumnSpan rmTabletPortrait to 5
+
+            WebSetResponsive psCaption rmMobilePortrait to "Number"
+
+            Object oFromCustomerCustomerNumber is a cWebForm
+                Set piColumnSpan to 4
+                Set peLabelPosition to lpTop
+                Set peLabelAlign to alignLeft
+                Set psLabel to "From:"
+                Set psToolTip to "Enter/select the First Customer in the Selection."
+                Set peDatatype to typeNumber
+                Set piMaxLength to 10
+                Set pbPromptButton to True
+
+                WebSetResponsive piColumnSpan rmMobilePortrait to 0
+                WebSetResponsive piColumnSpan rmTablet to 6
+
+                WebRegisterPath ntNavigateForward oSelectCustomer Self "FromCustomerNumber"
+
+                Procedure OnPrompt
+                    Send NavigatePath
+                End_Procedure
+
+                Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                    Move nfFromChild to NavigateData.eNavigateType
+                End_Procedure
+
+                Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                    Boolean bFound
+                    RowID riTable
+
+                    Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                    If (not (IsNullRowId (riTable))) Begin
+                        Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                        WebSet psValue to Customer.Customer_Number
+                    End
+                End_Procedure
+            End_Object
+
+            Object oToCustomerCustomerNumber is a cWebForm
+                Set piColumnSpan to 4
+                Set peLabelPosition to lpTop
+                Set peLabelAlign to alignLeft
+                Set psLabel to "To:"
+                Set psToolTip to "Enter/select the Last Customer in the Selection."
+                Set peDatatype to typeNumber
+                Set piMaxLength to 10
+                Set pbPromptButton to True
+
+                WebSetResponsive piColumnSpan rmMobilePortrait to 0
+                WebSetResponsive piColumnSpan rmTablet to 6
+
+                WebRegisterPath ntNavigateForward oSelectCustomer Self "ToCustomerNumber"
+
+                Procedure OnPrompt
+                    Send NavigatePath
+                End_Procedure
+
+                Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                    Move nfFromChild to NavigateData.eNavigateType
+                End_Procedure
+
+                Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                    Boolean bFound
+                    RowID riTable
+
+                    Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                    If (not (IsNullRowId (riTable))) Begin
+                        Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                        WebSet psValue to Customer.Customer_Number
+                    End
+                End_Procedure
+            End_Object
+        End_Object
+
+        Object oCustomerNameGroup is a cWebGroup
+            Set psCaption to "Customer Name:"
+            Set piColumnCount to 12
+            Set piColumnSpan to 3
+
+            WebSetResponsive psCaption rmMobilePortrait to "Name"
+
+            WebSetResponsive piColumnSpan rmMobile to 7
+            WebSetResponsive piColumnSpan rmTabletPortrait to 5
+
+            WebSetResponsive piColumnIndex rmMobile to 5
+
+            Object oFromCustomerName is a cWebForm
+                Set piColumnSpan to 8
+                Set peLabelPosition to lpTop
+                Set peLabelAlign to alignLeft
+                Set psLabel to "From:"
+                Set psToolTip to "Enter/select the First Customer in the Selection."
+                Set peDatatype to typeAscii
+                Set piMaxLength to 30
+                Set pbPromptButton to True
+
+                WebSetResponsive piColumnSpan rmTablet to 0
+
+                WebRegisterPath ntNavigateForward oSelectCustomer Self "FromCustomerName"
+
+                Procedure OnPrompt
+                    Send NavigatePath
+                End_Procedure
+
+                Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                    Move nfFromChild to NavigateData.eNavigateType
+                End_Procedure
+
+                Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                    Boolean bFound
+                    RowID riTable
+
+                    Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                    If (not (IsNullRowId (riTable))) Begin
+                        Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                        WebSet psValue to (Trim (Customer.Name))
+                    End
+                End_Procedure
+            End_Object
+
+            Object oToCustomerName is a cWebForm
+                Set piColumnSpan to 8
+                Set peLabelPosition to lpTop
+                Set peLabelAlign to alignLeft
+                Set psLabel to "To:"
+                Set psToolTip to "Enter/select the Last Customer in the Selection."
+                Set peDatatype to typeAscii
+                Set piMaxLength to 30
+                Set pbPromptButton to True
+
+                WebSetResponsive piColumnSpan rmTablet to 0
+
+                WebRegisterPath ntNavigateForward oSelectCustomer Self "ToCustomerName"
+
+                Procedure OnPrompt
+                    Send NavigatePath
+                End_Procedure
+
+                Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                    Move nfFromChild to NavigateData.eNavigateType
+                End_Procedure
+
+                Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                    Boolean bFound
+                    RowID riTable
+
+                    Move (DeserializeRowId (NavigateData.sRowId)) to riTable
+                    If (not (IsNullRowId (riTable))) Begin
+                        Move (FindByRowID (NavigateData.iTable, riTable)) to bFound
+                        WebSet psValue to (Trim (Customer.Name))
+                    End
+                End_Procedure
+            End_Object
+        End_Object
+
+        Object oSortOrderGroup is a cWebGroup
+            Set psCaption to "Order By:"
+            Set piColumnCount to 12
+            Set piColumnSpan to 3
+
+            WebSetResponsive piColumnSpan rmMobile to 0
+            WebSetResponsive piColumnSpan rmTabletPortrait to 5
+
+            Object oSortOnCombo is a cWebCombo
+                Set piColumnSpan to 8
+                Set pbShowLabel to False
+
+                WebSetResponsive piColumnSpan rmTabletPortrait to 0
+                WebSetResponsive piColumnSpan rmMobileLandscape to 6
+
+                Procedure OnFill
+                    Send AddComboItem "{Customer.Customer_Number}" "Customer_Number"
+                    Send AddComboItem "{Customer.Name}" "Name"
+                End_Procedure
+
+                Set psValue to "{Customer.Customer_Number}"
+            End_Object
+
+            Object oSortDescending is a cWebCheckBox
+                Set piColumnIndex to 8
+                Set piColumnSpan to 4
+                Set psCaption to "Descending"
+
+                WebSetResponsive piColumnIndex rmTablet to 0
+                WebSetResponsive piColumnSpan rmTablet to 0
+                WebSetResponsive piColumnIndex rmMobileLandscape to 6
+                WebSetResponsive piColumnSpan rmMobileLandscape to 4
+            End_Object
+        End_Object
+
+        Object oRunButton is a cWebButton
+            Set psCaption to "Run Report"
+            Set piColumnSpan to 3
+
+            WebSetResponsive pbRender rmTablet to False
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    WebRegisterPath ntNavigateForward oCustomerListReportResults
+
+    Procedure RunReport
+        Send NavigatePath
+    End_Procedure
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData
+        String[] sCustomerCustomerNumbers
+        String[] sCustomerNames
+        String sReportId sSortField
+        Boolean bSortDescending
+
+        WebGet psValue of oFromCustomerCustomerNumber to sCustomerCustomerNumbers[0]
+        WebGet psValue of oToCustomerCustomerNumber to sCustomerCustomerNumbers[1]
+
+        If (sCustomerCustomerNumbers[0] <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "CustomerCustomerNumberFrom" sCustomerCustomerNumbers[0] to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "CustomerCustomerNumberFromMode" C_drGreaterThanOrEqual to NavigateData.NamedValues
+        End
+        If (sCustomerCustomerNumbers[1] <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "CustomerCustomerNumberTo" sCustomerCustomerNumbers[1] to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "CustomerCustomerNumberToMode" C_drLessThanOrEqual to NavigateData.NamedValues
+        End
+
+        WebGet psValue of oFromCustomerName to sCustomerNames[0]
+        WebGet psValue of oToCustomerName to sCustomerNames[1]
+
+        If (sCustomerNames[0] <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "CustomerNameFrom" sCustomerNames[0] to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "CustomerNameFromMode" C_drGreaterThanOrEqual to NavigateData.NamedValues
+        End
+        If (sCustomerNames[1] <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "CustomerNameTo" sCustomerNames[1] to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "CustomerNameToMode" C_drLessThanOrEqual to NavigateData.NamedValues
+        End
+
+        WebGet psValue of oSortOnCombo to sSortField
+        Get GetChecked of oSortDescending to bSortDescending
+        If (bSortDescending) Begin
+            Get NamedValueAdd NavigateData.NamedValues "SortDirection" C_drDescending to NavigateData.NamedValues
+        End
+        Else Begin
+            Get NamedValueAdd NavigateData.NamedValues "SortDirection" C_drAscending to NavigateData.NamedValues
+        End
+        Get NamedValueAdd NavigateData.NamedValues "SortField" sSortField to NavigateData.NamedValues
+    End_Procedure
+End_Object

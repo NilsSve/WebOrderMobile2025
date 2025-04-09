@@ -1,0 +1,120 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+// This example view is the second part of the Top N Salespersons report. The component contains the report object, which
+// will be invoked from the cWebDRReportViewer class to produce a HTML "stream". The returned String array contains all pages 
+// of the report. The javascript counterpart (previewer.js) shows the result and the user can navigate thru the pages. 
+// The cWebDRReportViewer control allows printing of the report thru the browser and via the action menu the user can select 
+// to export the report to one of the supported formats. 
+// Note that for this the report and the data will be reloaded, reformatted. Theoretically the results can be different 
+// due to changed data in the database.
+
+// The report options are all implemented via parameters and are passed to this view via a NamedValue in a NavigateData
+// parameter.
+
+Object oTopNSalespersonsReportResults is a cWebView
+    Set psCaption to "Top N Salespersons (Results)"
+    Set pbShowCaption to False
+    Set peViewType to vtZoom
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+
+    Object oReport is a cDRReport
+        Set psReportName to "Top N Salespersons.dr"
+
+        Procedure OnCreate
+            Forward Send OnCreate
+
+            Set piReportLanguage '' to LANG_DEFAULT
+        End_Procedure
+
+        Procedure OnInitializeReport
+            Send SetParameters
+        End_Procedure
+
+        Procedure SetParameters
+            String sReportId sValue
+            Integer iParameter
+            tWebNavigateData NavigateData
+
+            Get psReportId to sReportId
+
+            Get GetNavigateData to NavigateData
+
+            Get NamedValueGet NavigateData.NamedValues "ShowOthers" to sValue
+            Get ParameterIdByName sReportId "ShowOthers" to iParameter
+            Set psParameterValue sReportId iParameter to sValue
+
+            Get NamedValueGet NavigateData.NamedValues "TopNAmount" to sValue
+            Get ParameterIdByName sReportId "TopNAmount" to iParameter
+            Set psParameterValue sReportId iParameter to sValue
+
+            Get NamedValueGet NavigateData.NamedValues "ShowChart" to sValue
+            Get ParameterIdByName sReportId "ShowChart" to iParameter
+            Set psParameterValue sReportId iParameter to sValue
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+
+            WebSetResponsive piZoom rmMobilePortrait to 45
+            WebSetResponsive piZoom rmMobileLandscape to 75
+            WebSetResponsive piZoom rmTabletPortrait to 100
+            WebSetResponsive piZoom rmTabletLandscape to 125
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetBreadcrumbCaption "Results"
+        Send SetHeaderCaption "Top N Salespersons"
+
+        Send RunReport of oWebMainPanel
+    End_Procedure
+End_Object

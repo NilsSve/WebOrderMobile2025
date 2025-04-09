@@ -1,0 +1,113 @@
+﻿Use cWebModalDialog.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebForm.pkg
+Use cWebWidgetConfigurationWizard.pkg
+Use cWebGroup.pkg
+Use cWebRadio.pkg
+
+Object oWidgetActionConfig is a cWebWidgetConfigurationWizard
+    Set psCaption to "Widget Config"
+    Set piMinWidth to 500
+    Set piMinHeight to 200
+    Set pbServerOnSubmit to True    // enable the OnSubmit event
+    
+    Object oMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oActionRadio1 is a cWebRadio
+            Set piColumnSpan to 0
+            Set psCaption to "Customer Query"
+            Set psRadioValue to "CustomerQuery"
+        End_Object
+        
+        Object oActionRadio2 is a cWebRadio
+            Set piColumnSpan to 0
+            Set psCaption to "Orders Query"
+            Set psRadioValue to "OrdersQuery"
+        End_Object
+        
+        Object oActionRadio3 is a cWebRadio
+            Set piColumnSpan to 0
+            Set psCaption to "SalesPerson Query"
+            Set psRadioValue to "SalesPersonQuery"
+        End_Object
+        
+        Object oActionRadio4 is a cWebRadio
+            Set piColumnSpan to 0
+            Set psCaption to "New Customer"
+            Set psRadioValue to "NewCustomer"
+        End_Object
+        
+        Object oActionRadio5 is a cWebRadio
+            Set piColumnSpan to 0
+            Set psCaption to "New Order"
+            Set psRadioValue to "NewOrder"
+        End_Object
+        
+        Object oActionRadio6 is a cWebRadio
+            Set piColumnSpan to 0
+            Set psCaption to "Product Query"
+            Set psRadioValue to "ProductQuery"
+        End_Object
+    End_Object 
+    
+    Object oBottomPanel is a cWebPanel
+        Set piColumnCount to 6
+        Set peRegion to prBottom
+
+        Object oOkButton is a cWebButton
+            Set psCaption to C_$OK
+            Set piColumnSpan to 1
+            Set piColumnIndex to 4
+
+            Procedure OnClick
+                Send Ok
+            End_Procedure
+        End_Object 
+
+        Object oCancelButton is a cWebButton
+            Set psCaption to C_$Cancel
+            Set piColumnSpan to 1
+            Set piColumnIndex to 5
+
+            Procedure OnClick
+                Send Cancel
+            End_Procedure
+        End_Object 
+    End_Object 
+
+    Procedure OnSubmit
+        Send Ok
+    End_Procedure
+    
+    Procedure Ok
+        //  Do some calculations / saves / validations here ..
+        Forward Send Ok
+    End_Procedure
+
+    Procedure Cancel
+        Forward Send Cancel
+    End_Procedure
+
+    Procedure OnPopulateWizard tWidgetConfigProp[] aConfigurableProps tWidgetConfigPropValue[] aCurPropValues
+        String sAction
+        
+        Get GetPropValue aCurPropValues '' "psAction" to sAction
+        
+        If (sAction = "") ;
+            Move "QueryCustomer" to sAction
+        
+        WebSet psValue of oActionRadio1 to sAction
+    End_Procedure
+
+    Procedure OnGetConfigValues tWidgetConfigPropValue[]  ByRef aNewPropValues
+        String sAction sObjId
+        
+        WebGet psValue of oActionRadio1 to sAction
+        
+        Send SetPropValue (&aNewPropValues) "" "psAction" sAction
+    End_Procedure
+    
+
+End_Object

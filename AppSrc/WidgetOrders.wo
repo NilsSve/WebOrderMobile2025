@@ -1,0 +1,114 @@
+﻿Use cWebWidget.pkg
+
+Use cCustomerDataDictionary.dd
+Use cSalesPersonDataDictionary.dd
+Use cOrderHeaderDataDictionary.dd
+
+Composite cWidgetOrders is a cWebWidget
+    Set peLayoutType to ltFlow
+    Set piColumnCount to 12
+    Set pbFillHeight to True
+    Set psRowHeights to "0/1fr"
+    Set psWidgetName to "cWidgetOrders"
+    Set psCaption to "Orders"
+    Set psWidgetCaption to "Orders"
+    Set psWidgetDescription to "List of orders"
+    Set piDefaultColSpan to 4
+    Set piDefaultRowSpan to 5
+    Set pbShowBorder to True
+    
+    Object oCustomerDataDictionary is a cCustomerDataDictionary
+    End_Object
+
+    Object oSalesPersonDataDictionary is a cSalesPersonDataDictionary
+    End_Object
+
+    Object oOrderHeaderDataDictionary is a cOrderHeaderDataDictionary
+        Set DDO_Server to oCustomerDataDictionary
+        Set DDO_Server to oSalesPersonDataDictionary
+    End_Object
+
+    Set Main_DD to oOrderHeaderDataDictionary
+    Set Server  to oOrderHeaderDataDictionary
+    
+    Object oList is a cWebList
+        Set pbFillHeight to True
+        Set piColumnSpan to 0
+        Set pbServerOnRowClick to True
+        Set psCSSClass to "MobileList"
+        Set piSortColumn to 0
+        Set pbReverseOrdering to True
+        Set pbShowHeader to False
+        Set psPlaceHolder to "No orders"
+
+        Object oOrderHeaderOrder_Number is a cWebColumn
+            Entry_Item OrderHeader.Order_Number
+            Set psCaption to "Order Number"
+            Set piWidth to 80
+
+            Set psCSSClass to "RowCaption"
+            Set peAlign to alignLeft
+        End_Object
+
+        Object oOrderDate is a cWebColumn
+            Entry_Item OrderHeader.Order_Date
+            Set psCaption to "Order Date"
+            Set psCSSClass to "RowCaption"
+            Set piWidth to 110
+            Set pbFixedWidth to True
+        End_Object
+
+        Object oOrderHeaderOrder_Total is a cWebColumn
+            Entry_Item OrderHeader.Order_Total
+            Set psCaption to "Price"
+            Set piWidth to 100
+            Set peAlign to alignRight
+            Set psCSSClass to "RowCaption"
+        End_Object
+
+        Object oCustomer_Name is a cWebColumn
+            Set psCaption to "Customer Name"
+            Set piWidth to 150
+            Set piListColSpan to 3
+            Set pbNewLine to True
+            Entry_Item Customer.Name
+        End_Object
+
+        Object oSalesPName is a cWebColumn
+            Set psCaption to "Sales Person"
+            Set piWidth to 262
+            Set piListColSpan to 3
+            Set pbNewLine to True
+            Set psCSSClass to "RowDetail"
+            Procedure OnSetCalculatedValue String ByRef sValue
+                Move ("by: " + Trim(SalesPerson.ID) + " - " + Trim(SalesPerson.Name)) to sValue
+            End_Procedure
+        End_Object
+
+        WebRegisterPath ntNavigateForward oZoomOrder
+
+        Procedure OnRowClick String sRowID
+            tWebNavigateData NavigateData
+
+            Get GetNavigateData to NavigateData
+            If (NavigateData.eNavigateType = nfFromChild) Begin
+                Send NavigateClose Self
+            End
+            Else Begin
+                Send NavigatePath
+            End
+        End_Procedure
+
+        Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+            Move True to NavigateData.bReadOnly
+        End_Procedure
+    End_Object
+
+    
+
+    Procedure OnInitializeWidget
+        
+        Send FindFromTop of oList
+    End_Procedure
+
+End_Composite

@@ -1,0 +1,171 @@
+﻿Use cWebWidget.pkg
+Use cWebHtmlBox.pkg
+
+Use cCustomerDataDictionary.dd
+
+Composite cWidgetCustomers is a cWebWidget
+    Set peLayoutType to ltFlow
+    Set piColumnCount to 12
+    Set psRowHeights to "0/1fr"
+    Set psWidgetName to "cWidgetCustomers"
+    Set psCaption to "Customers"
+    Set psWidgetCaption to "Customers"
+    Set psWidgetDescription to "List of customers"
+    Set piDefaultColSpan to 4
+    Set piDefaultRowSpan to 5
+    Set pbShowBorder to True
+   
+    
+    { WebProperty=Server }
+    Property String piBalanceFrom 0
+    { WebProperty=Server }
+    Property String piBalanceTo 0
+
+    
+    Object oCustomer_DD is a cCustomerDataDictionary
+        Procedure OnConstrain
+            Integer iFrom iTo
+            
+            Forward Send OnConstrain
+            
+            WebGet piBalanceFrom of (Widget(Self)) to iFrom
+            WebGet piBalanceTo of (Widget(Self)) to iTo
+            
+            If (iTo > 0) ;
+                Constrain Customer.Balance lt iTo
+                
+            If (iFrom > 0) ;
+                Constrain Customer.Balance gt iFrom
+        End_Procedure
+    End_Object
+
+    Set Main_DD to oCustomer_DD
+    Set Server to oCustomer_DD
+    
+    Object oLabel is a cWebHtmlBox
+        Set piColumnSpan to 12
+        Set psHtml to "<h1>Customers</h1>"
+        
+        Procedure UpdateLabel
+            Integer iFrom iTo
+            String sLabel
+            
+            WebGet piBalanceFrom of (Widget(Self)) to iFrom
+            WebGet piBalanceTo of (Widget(Self)) to iTo
+            
+            If (iFrom > 0 and iTo > 0) ;
+                Move (sLabel + SFormat("<p>(balance between %1 and %2)</p>", iFrom, iTo)) to sLabel
+            Else If (iFrom > 0) ;
+                Move (sLabel + SFormat("<p>(balance above %1)</p>", iFrom, iTo)) to sLabel
+            Else If (iTo > 0) ;
+                Move (sLabel + SFormat("<p>(balance below %2)</p>", iFrom, iTo)) to sLabel
+            
+            WebSet psHtml to sLabel
+            WebSet pbRender to (sLabel <> "") 
+        End_Procedure
+    End_Object   
+    
+    Object oList is a cWebList
+        Set piColumnSpan to 12
+        Set pbServerOnRowClick to True
+        Set pbFillHeight to True
+        Set psCSSClass to "MobileList"
+        Set piSortColumn to 0
+        Set pbShowHeader to False
+        Set pbAllowDeleteRow to True
+        
+        Object oCustomerName is a cWebColumn
+            Entry_Item Customer.Name
+            Set psCaption to "Customer Name"
+            Set piWidth to 315
+            Set psCSSClass to "RowCaption"
+            Set piListColSpan to 3
+        End_Object
+        
+        Object oCustomerCustomer_Number is a cWebColumn
+            Entry_Item Customer.Customer_Number
+            Set psCaption to "Number"
+            Set piWidth to 32
+            Set pbFixedWidth to True
+            Set peAlign to alignLeft
+            Set pbNewLine to True
+            Set psCSSClass to "RowDetail"
+            
+        End_Object
+        
+        Object oCustomer_City is a cWebColumn
+            Set psCaption to "City, State, Zip"
+            Set piWidth to 954
+            Set psCSSClass to "RowDetail"
+            Set peWordBreak to wbEllipsis
+            Procedure OnSetCalculatedValue String ByRef sValue
+                Move (Customer.City - "," * Customer.State - "," * Customer.Zip) to sValue
+            End_Procedure
+        End_Object
+        
+        Object oCustomerBalance is a cWebColumn
+            Entry_Item Customer.Balance
+            Set psCaption to "Balance Due"
+            Set piWidth to 93
+            Set pbFixedWidth to True
+            Set psCSSClass to "RowDetail"
+        End_Object
+        
+        WebRegisterPath ntNavigateForward oZoomCustomer Self "EditCustomer"
+        
+        Procedure OnRowClick String sRowID
+            tWebNavigateData NavigateData
+            String sTask
+            Boolean bFound
+            Get GetNavigateData to NavigateData
+            Case Begin
+                Case (NavigateData.eNavigateType=nfFromChild)
+                Case (NavigateData.eNavigateType=nfFromMain)
+                    // a child or main lookup
+                    Send NavigateClose Self
+                    Case Break
+                Case (NavigateData.eNavigateType=nfFromParent)
+                    // not used yet
+                    Case Break
+                Case Else
+                    Get NamedValueGet NavigateData.NamedValues "task" to sTask
+                    If (sTask="maint") Begin
+                        Send NavigateForward to oZoomCustomer Self
+                    End
+                    Else Begin
+                        Send NavigateForward to oZoomCustomer Self
+                    End
+            Case End
+        End_Procedure
+    End_Object
+    
+    
+
+    Procedure OnInitializeWidget
+        Send UpdateLabel of oLabel
+        Send Rebuild_Constraints of oCustomer_DD
+        
+        Send FindFromTop of oList
+    End_Procedure
+
+    Procedure OnWidgetPropsChanged
+        Send UpdateLabel of oLabel
+        
+         Send Rebuild_Constraints of oCustomer_DD
+        
+        Send FindFromTop of oList
+    End_Procedure
+
+    Procedure OnGetConfigurableProps tWidgetConfigProp[]  ByRef aConfigurableProps
+        Forward Send OnGetConfigurableProps (&aConfigurableProps)
+         
+        Get CreateConfigurableProp (Self) (RefFunc(piBalanceFrom)) to aConfigurableProps[0]
+        Move 'Minimum Balance' to aConfigurableProps[0].Settings.sOptLabel
+        Move 0                 to aConfigurableProps[0].Settings.eControlType // Form
+        
+        Get CreateConfigurableProp (Self) (RefFunc(piBalanceTo)) to aConfigurableProps[1]
+        Move 'Maximum Balance' to aConfigurableProps[1].Settings.sOptLabel
+        Move 0                 to aConfigurableProps[1].Settings.eControlType // Form
+    End_Procedure
+
+End_Composite

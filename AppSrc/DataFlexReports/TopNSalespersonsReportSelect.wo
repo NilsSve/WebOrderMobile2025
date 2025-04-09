@@ -1,0 +1,133 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebGroup.pkg
+Use cWebForm.pkg
+Use cWebEdit.pkg
+Use cWebRadio.pkg
+Use cWebCombo.pkg
+Use cWebCheckBox.pkg
+Use cWebLabel.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+// This example webview is the first part of the Top N Salespersons report.
+
+// Users can specify the value of N for the group sort operation. Choices are top 3, 4 or 10. Technically other numbers
+// can be used as well but this demo limits to these three values
+
+// The results are shown in a second webview. This is done to give the maximum space for the results in a webview.
+
+// The user can indicate if the report should show a chart representing the results and/or a line that tells what the
+// other salespersons were selling.
+
+// All selection criteria and options are passed to the results view via the NamedValues member of the NavigateData parameter
+// of the OnGetNavigateForwardData event
+
+Object oTopNSalespersonsReportSelect is a cWebView
+    Set psCaption to "Top N Salespersons"
+    Set pbShowCaption to False
+    Set peWebViewStyle to wvsDrillDown
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oOptionsGroup is a cWebGroup
+            Set psCaption to "Options"
+            Set piColumnCount to 12
+
+            Object oShowOthersParameterCheckbox is a cWebCheckbox
+                Set psCaption to "Show Others"
+                Set piColumnSpan to 3
+                Set psToolTip to 'Show the Results of the Other Salespersons Grouped Together'
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+            End_Object
+
+            Object oShowChartParameterCheckbox is a cWebCheckbox
+                Set psCaption to "Show Chart"
+                Set piColumnSpan to 3
+                Set psToolTip to 'Show a Chart at the Bottom of the Report Representing the Top N SalesPersons'
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+            End_Object
+
+            Object oTopNAmountParameterCombo is a cWebCombo
+                Set psLabel to "Top N Amount"
+                Set peLabelAlign to alignLeft
+                Set peLabelPosition to lpTop
+                Set piColumnSpan to 3
+                Set psToolTip to 'Select a Value for the TOP N Amount to be Displayed'
+
+                WebSetResponsive piColumnSpan rmMobile to 0
+
+                Procedure OnFill
+                    Send AddComboItem 10 'Top 10'
+                    Send AddComboItem 5 'Top 5'
+                    Send AddComboItem 3 'Top 3'
+                End_Procedure
+
+                Set psValue to 10
+            End_Object
+        End_Object
+
+        Object oRunButton is a cWebButton
+            Set psCaption to "Run Report"
+            Set piColumnSpan to 2
+
+            WebSetResponsive pbRender rmTablet to False
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+    
+    WebRegisterPath ntNavigateForward oTopNSalespersonsReportResults
+    
+    Procedure RunReport
+        Send NavigatePath
+    End_Procedure
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData
+        String sValue
+
+        Get GetChecked of oShowOthersParameterCheckbox to sValue
+        Get NamedValueAdd NavigateData.NamedValues "ShowOthers" sValue to NavigateData.NamedValues
+
+        WebGet psValue of oTopNAmountParameterCombo to sValue
+        Get NamedValueAdd NavigateData.NamedValues "TopNAmount" sValue to NavigateData.NamedValues
+
+        Get GetChecked of oShowChartParameterCheckbox to sValue
+        Get NamedValueAdd NavigateData.NamedValues "ShowChart" sValue to NavigateData.NamedValues
+    End_Procedure
+End_Object

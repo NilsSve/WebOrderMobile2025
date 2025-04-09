@@ -1,0 +1,150 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+// This example webview is the second part of the Sales per Salesperson per USA state crosstab report. The component
+// contains the report Object, which will be invoked from the cWebDRReportViewer class to produce a HTML "stream".
+// The returned String array contains all pages of the report. The javascript counterpart (previewer.js) shows the
+// result and the user can navigate thru the pages. The cWebDRReportViewer control allows printing of the report
+// thru the browser and via the action menu the user can select to export the report to one of the supported formats.
+// Note that for this the report and the data will be reloaded, reformatted. Theoretically the results can be different
+// due to changed data in the database.
+
+// The language passed from the browser (the client language) is used to overrule the settings from the server for date and
+// number formatting and for a currency symbol. In a real world a currency symbol change should also mean a recalculation of
+// the amount. For this example it is used for the date format in the page footer.
+
+Object oSalesPerSalesPersonPerUSAStateReportResults is a cWebView
+    Set psCaption to "Sales per Salesperson per USA State (Results)"
+    Set pbShowCaption to False
+    Set peViewType to vtZoom
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+
+    Object oReport is a cDRReport
+        Set psReportName to "Sales per Salesperson per USA state.dr"
+
+        Procedure OnInitializeReport
+            String sReportId
+            String[] sBrowserLanguages
+
+            Get psReportId to sReportId
+
+            Send SetFilters sReportId
+            Send SetParameters sReportId
+
+            // Get the preferred browser (client) language and pass this on to the report
+            WebGet pasBrowserLanguages of ghoWebApp to sBrowserLanguages
+            If (SizeOfArray (sBrowserLanguages) > 0) Begin
+                Send SetReportLocaleAndLanguage sReportId sBrowserLanguages[0] 'ReportLanguage'
+            End
+        End_Procedure
+
+        Procedure SetFilters String sReportId
+            tWebNavigateData NavigateData
+            Integer iCustomerStatus iCustomerStatusMode
+
+            Get GetNavigateData to NavigateData
+            Get NamedValueIndex NavigateData.NamedValues "CustomerStatus" to iCustomerStatus
+            Get NamedValueIndex NavigateData.NamedValues "CustomerStatusMode" to iCustomerStatusMode
+
+            If (iCustomerStatusMode > -1 and iCustomerStatus > -1) Begin
+                Send AddFilter sReportId "{Customer.Status}" NavigateData.NamedValues[iCustomerStatusMode].sValue NavigateData.NamedValues[iCustomerStatus].sValue
+            End
+        End_Procedure
+
+        // In this routine we find the code that sets the parameter values. The values
+        // for the parameters can be retrieved from an input control or from own coding.
+        Procedure SetParameters String sReportId
+            Integer iParameter
+            String sTotalsPerState
+            String sTotalsPerSalesPerson
+            String sGrandTotal
+            tWebNavigateData NavigateData
+
+            Get GetNavigateData to NavigateData
+
+            Get NamedValueGet NavigateData.NamedValues "TotalsPerState" to sTotalsPerState
+            Set psFunction sReportId "TotalsPerState" to ("Return" * sTotalsPerState)
+
+            Get NamedValueGet NavigateData.NamedValues "TotalsPerSalesPerson" to sTotalsPerSalesPerson
+            Set psFunction sReportId "TotalsPerSalesPerson" to ("Return" * sTotalsPerSalesPerson)
+
+            Get NamedValueGet NavigateData.NamedValues "GrandTotal" to sGrandTotal
+            Get ParameterIdByName sReportId "GrandTotal" to iParameter
+            Set psParameterValue sReportId iParameter to sGrandTotal
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+
+            WebSetResponsive piZoom rmMobilePortrait to 45
+            WebSetResponsive piZoom rmMobileLandscape to 75
+            WebSetResponsive piZoom rmTabletPortrait to 100
+            WebSetResponsive piZoom rmTabletLandscape to 125
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        String sOption
+
+        Get NamedValueGet NavigateData.NamedValues "WithPieChart" to sOption
+        If (sOption = "1") Begin
+            Set psReportName of oReport to "Sales per Salesperson per USA state with Pie Chart.dr"
+        End
+        Else Begin
+            Set psReportName of oReport to "Sales per Salesperson per USA state.dr"
+        End
+
+        Send SetBreadcrumbCaption "Results"
+        Send SetHeaderCaption "Sales per Salesperson per USA State"
+
+        Send RunReport of oWebMainPanel
+    End_Procedure
+End_Object

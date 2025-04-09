@@ -1,0 +1,117 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebGroup.pkg
+Use cWebForm.pkg
+Use cWebEdit.pkg
+Use cWebRadio.pkg
+Use cWebCombo.pkg
+Use cWebCheckBox.pkg
+Use cWebLabel.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRAPI.Pkg
+
+// This example webview is the first part of an orderlist report. Users must enter a minimum order total value and that
+// is enforced to avoid that too many pages with results are created. The default minimum is set to 12000.
+
+// The run report button in the webview will be hidden when running from a mobile device such as a tablet or phone. Running
+// a report is then possible via the run button in the actionbar.
+
+// All selection criteria and options are passed to the results view via the NamedValues member of the NavigateData parameter
+// of the OnGetNavigateForwardData event
+
+Object oOrderListReportSelect is a cWebView
+    Set psCaption to "OrderList"
+    Set pbShowCaption to False
+    Set peWebViewStyle to wvsDrillDown
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oOrderHeaderOrderTotal is a cWebForm
+            Set piColumnSpan to 2
+            Set peLabelPosition to lpTop
+            Set peLabelAlign to alignLeft
+            Set psLabel to "Minimum Order Total:"
+            Set psToolTip to "Enter a Minimum Order Total Value."
+            Set peDatatype to typeNumber
+            Set piMaxLength to 10
+            Set piPrecision to 2
+
+            WebSetResponsive piColumnSpan rmMobilePortrait to 0
+            WebSetResponsive piColumnSpan rmMobileLandscape to 3
+        End_Object
+
+        Object oRunButton is a cWebButton
+            Set psCaption to "Run Report"
+            Set piColumnSpan to 2
+
+            WebSetResponsive pbRender rmTablet to False
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+    
+    WebRegisterPath ntNavigateForward oOrderListReportResults
+
+    Procedure RunReport
+        Number nOrderMinimum
+
+        WebGet psValue of oOrderHeaderOrderTotal to nOrderMinimum
+        If (nOrderMinimum < 1) Begin
+            Send ShowInfoBox "Please Enter a Order Minimum. Without a Minimum Value the Report Might Run into a Timeout"
+            Procedure_Return
+        End
+
+        Send NavigatePath
+    End_Procedure
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData
+        String sOrderHeaderOrderTotal
+        String sReportId
+
+        WebGet psValue of oOrderHeaderOrderTotal to sOrderHeaderOrderTotal
+
+        If (sOrderHeaderOrderTotal <> "") Begin
+            Get NamedValueAdd NavigateData.NamedValues "OrderHeaderOrderTotal" sOrderHeaderOrderTotal to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "OrderHeaderOrderTotalMode" C_drGreaterThanOrEqual to NavigateData.NamedValues
+        End
+    End_Procedure
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        WebSet psValue of oOrderHeaderOrderTotal to 12000
+    End_Procedure
+End_Object

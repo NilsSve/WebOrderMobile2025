@@ -1,0 +1,207 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebGroup.pkg
+Use cWebForm.pkg
+Use cWebEdit.pkg
+Use cWebRadio.pkg
+Use cWebCombo.pkg
+Use cWebCheckBox.pkg
+Use cWebLabel.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRAPI.Pkg
+
+// This example webview is the first part of the Sales per Salesperson per USA state crosstab report. A crosstab
+// report can have totals per row and/or totals per column and if both are present a grandtotal value. Via the
+// webcontrols on this webview the user can decide to show the totals row/column and grandtotal. The user can
+// also indicate to show a chart in the report results. While the chart could be integrated in the same report,
+// the demo does not do this, just to show how to dynamically load a different report. Finally the user can select
+// if all sales data should be used or only from the active or not active customers.
+
+// Grandtotal checkbox can only be checked if the crosstab shows a total row and total column.
+
+Object oSalesPerSalesPersonPerUSAStateReportSelect Is A cWebView
+    Set psCaption to "Sales per Salesperson per USA State"
+    Set pbShowCaption to False
+    Set peWebViewStyle to wvsDrillDown
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oTotalsPerStateForm is a cWebCombo
+            Set peLabelPosition to lpTop
+            Set peLabelAlign to alignLeft
+            Set psLabel to "Totals / State"
+            Set piColumnSpan to 3
+            Set psToolTip to 'Add a total value over all sales persons per state'
+            Set pbServerOnChange to True
+
+            WebSetResponsive piColumnSpan rmMobile to 0
+            WebSetResponsive piColumnSpan rmTablet to 6
+
+            Procedure OnChange String sNewValue String sOldValue
+                Send UpdateGrandTotalState of oGrandTotalParameterCheckbox
+            End_Procedure
+
+            Procedure OnFill
+                Send AddComboItem "drNoTotalRow" "No Total Row"
+                Send AddComboItem "drTotalOnTop" "Total Row on the top"
+                Send AddComboItem "drTotalOnBottom" "Total Row on the bottom"
+            End_Procedure
+
+            Set psValue to "drTotalOnTop"
+        End_Object
+
+        Object oTotalsPerSalesPersonForm is a cWebCombo
+            Set peLabelPosition to lpTop
+            Set peLabelAlign to alignLeft
+            Set psLabel to "Totals / Sales Person"
+            Set piColumnSpan to 3
+            Set psToolTip to 'Add a total value over all states per sales person'
+            Set pbServerOnChange to True
+
+            WebSetResponsive piColumnSpan rmMobile to 0
+            WebSetResponsive piColumnSpan rmTablet to 6
+
+            Procedure OnChange String sNewValue String sOldValue
+                Send UpdateGrandTotalState of oGrandTotalParameterCheckbox
+            End_Procedure
+
+            Procedure OnFill
+                Send AddComboItem "drNoTotalColumn" "No Total Column"
+                Send AddComboItem "drTotalOnLeft" "Total Column on the Left"
+                Send AddComboItem "drTotalOnRight" "Total Column on the right"
+            End_Procedure
+
+            Set psValue to "drTotalOnLeft"
+        End_Object
+
+        Object oGrandTotalParameterCheckbox is a cWebCheckbox
+            Set psCaption to "Grand Total"
+            Set piColumnSpan to 3
+            Set psToolTip to 'A Grand Total is not displayed when the row/column Totals are not set'
+
+            WebSetResponsive piColumnSpan rmMobile to 5
+
+            Procedure UpdateGrandTotalState
+                String sTotalRow sTotalColumn
+                Boolean bEnabled
+
+                WebGet psValue of oTotalsPerStateForm to sTotalRow
+                WebGet psValue of oTotalsPerSalesPersonForm to sTotalColumn
+
+                Move (sTotalRow <> "drNoTotalRow" and sTotalColumn <> "dtNoTotalColumn") to bEnabled
+                WebSet pbEnabled to bEnabled
+                If (not (bEnabled)) Begin
+                    Send SetChecked False
+                End
+            End_Procedure
+        End_Object
+
+        Object oWithPieChartCheckbox is a cWebCheckbox
+            Set piColumnSpan to 3
+            Set psCaption to "With Pie Chart"
+
+            WebSetResponsive piColumnSpan rmMobile to 5
+            WebSetResponsive piColumnIndex rmMobileLandscape to 5
+            WebSetResponsive piColumnIndex rmMobilePortrait to 0
+        End_Object
+
+        Object oCustomerStatus Is A cWebCombo
+            Set peLabelPosition to lpTop
+            Set peLabelAlign to alignLeft
+            Set psLabel to "Customer Active Status"
+            Set psToolTip to "Only active customers"
+            Set piColumnSpan to 3
+            Set peDatatype to typeAscii
+
+            WebSetResponsive piColumnSpan rmMobile to 0
+            WebSetResponsive piColumnSpan rmTablet to 6
+
+            Procedure OnFill
+                Send AddComboItem "" ""
+                Send AddComboItem "Y" "Yes"
+                Send AddComboItem "N" "No"
+
+                WebSet psValue to "Y"
+            End_Procedure
+        End_Object
+
+        Object oRunButton is a cWebButton
+            Set psCaption to "Run Report"
+            Set piColumnSpan to 2
+
+            WebSetResponsive pbRender rmTablet to False
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+    
+    WebRegisterPath ntNavigateForward oSalesPerSalesPersonPerUSAStateReportResults
+    
+    Procedure RunReport
+        Send NavigatePath
+    End_Procedure
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oRunReportMenuItem is a cWebMenuItem
+            Set psCaption to "Run Report"
+            Set psTooltip to "Run the report with selections"
+            Set psCSSClass to "RWRunReportButton"
+
+            WebSetResponsive peActionDisplay rmDesktop to adMenu
+            WebSetResponsive peActionDisplay rmTablet to adBoth
+
+            Procedure OnLoad
+                Forward Send OnLoad
+
+                Send SetActionMode (RefProc (OnClick)) scModeProgress "Please Wait for Report Results to be Generated and Downloaded to the Viewer..."
+            End_Procedure
+
+            Procedure OnClick
+                Send RunReport
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData
+        String sCustomerStatus sTotalsPerState sTotalsPerSalesPerson sGrandTotal
+        String sWithPieChart
+
+        WebGet psValue of oTotalsPerStateForm to sTotalsPerState
+        Get NamedValueAdd NavigateData.NamedValues "TotalsPerState" sTotalsPerState to NavigateData.NamedValues
+
+        WebGet psValue of oTotalsPerSalesPersonForm to sTotalsPerSalesPerson
+        Get NamedValueAdd NavigateData.NamedValues "TotalsPerSalesPerson" sTotalsPerSalesPerson to NavigateData.NamedValues
+
+        Get GetChecked of oGrandTotalParameterCheckbox to sGrandTotal
+        Get NamedValueAdd NavigateData.NamedValues "GrandTotal" sGrandTotal to NavigateData.NamedValues
+
+        Get GetChecked of oWithPieChartCheckbox to sWithPieChart
+        Get NamedValueAdd NavigateData.NamedValues "WithPieChart" sWithPieChart to NavigateData.NamedValues
+
+        WebGet psValue of oCustomerStatus to sCustomerStatus
+        If (Length (Trim (sCustomerStatus)) > 0) Begin
+            Get NamedValueAdd NavigateData.NamedValues "CustomerStatus" sCustomerStatus to NavigateData.NamedValues
+            Get NamedValueAdd NavigateData.NamedValues "CustomerStatusMode" C_drEqual to NavigateData.NamedValues
+        End
+    End_Procedure
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Forward Send OnNavigateForward NavigateData hoInvokingView hoInvokingObject
+
+        Send SetChecked of oGrandTotalParameterCheckbox True
+    End_Procedure
+End_Object

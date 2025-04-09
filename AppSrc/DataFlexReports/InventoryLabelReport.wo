@@ -1,0 +1,139 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebCombo.pkg
+
+Use cWebDRReportViewer.pkg
+Use cWebDRReport.pkg
+
+Use cInventoryDataDictionary.dd
+
+Object oInventoryLabelReport is a cWebView
+    Set piColumnCount to 12
+    Set psCaption to "Inventory Labels"
+    Set pbShowCaption to False
+    Set piMinWidth to 700
+    Set peViewType to vtUndefined
+    Set peStateMode to vsmOff
+
+    Object oInventory_DD is a cInventoryDataDictionary
+    End_Object
+
+    Object oReport is a cDRReport
+        Set psReportName to 'Inventory Labels with Barcode.DR'
+
+        Procedure OnInitializeReport
+            tWebNavigateData NavigateData
+            String sReportId sBarcodeOption
+            Integer iParameter iLabels iLabel
+            Variant[][] vData
+
+            Get psReportId to sReportId
+
+            WebGet psValue of oBarcodeOptionsCombo to sBarCodeOption
+            Get ParameterIdByName sReportId "BarcodeType" to iParameter
+            Set psParameterValue sReportId iParameter to sBarcodeOption
+
+            Get GetNavigateData to NavigateData
+            WebGet psValue of oNumberOfLabelsForm to iLabels
+            Decrement iLabels
+
+            Send ReadByRowId of oInventory_DD Inventory.File_Number (DeserializeRowID (NavigateData.sRowID))
+
+            For iLabel from 0 to iLabels
+                Move Inventory.Item_ID to vData[iLabel][0]
+                Move Inventory.Description to vData[iLabel][1]
+                Move Inventory.Unit_Price to vData[iLabel][2]
+            Loop
+
+            Send TableData sReportId 0 vData
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Object oNumberOfLabelsForm is a cWebForm
+            Set psLabel to "Labels:"
+            Set piColumnSpan to 2
+            Set peDataType to typeNumber
+            Set piPrecision to 0
+            Set piMaxLength to 2
+
+            WebSetResponsive peLabelPosition rmMobilePortrait to lpTop
+            WebSetResponsive piColumnSpan rmMobilePortrait to 0
+
+            Procedure OnLoad
+                WebSet psValue to 1
+            End_Procedure
+        End_Object
+
+        Object oRunReportButton is a cWebButton
+            Set psCaption to "Print Labels"
+            Set piColumnSpan to 2
+            Set piColumnIndex to 2
+
+            WebSetResponsive peLabelPosition rmMobilePortrait to lpTop
+            WebSetResponsive piColumnSpan rmMobilePortrait to 0
+
+            Procedure OnClick
+                Integer iLabels
+
+                WebGet psValue of oNumberOfLabelsForm to iLabels
+                If (iLabels > 0) Begin
+                    Send ShowReport of oViewer
+                End
+                Else Begin
+                    Send ShowInfoBox "Number of Labels is too Low (Minimum = 1)"
+                End
+            End_Procedure
+        End_Object
+
+        Object oBarcodeOptionsCombo is a cWebCombo
+            Set piColumnSpan to 8
+            Set psLabel to "Barcode type:"
+            Set piColumnIndex to 4
+
+            WebSetResponsive peLabelPosition rmMobilePortrait to lpTop
+            WebSetResponsive piColumnSpan rmMobilePortrait to 0
+
+            Procedure OnFill
+                Forward Send OnFill
+
+                Send AddComboItem "drCode128" "Code 128 (automatic subset switching)"
+                Send AddComboItem "drCode128B" "Code 128 (Subset B)"
+                Send AddComboItem "drCode16K" "Code 16K"
+                Send AddComboItem "drCode3of9" "Code 3 of 9 (Code 39)"
+                Send AddComboItem "drCode49" "Code 49"
+                Send AddComboItem "drCode93" "Code 93"
+                Send AddComboItem "drCodeDataMatrix" "Data Matrix ECC200"
+                Send AddComboItem "drCodeDot" "DotCode"
+                Send AddComboItem "drCodeExtended3of9" "Extended Code 3 of 9 (Code 39+)"
+                Send AddComboItem "drCodeGridMatrix" "Grid Matrix"
+                Send AddComboItem "drCodeHIBC128" "HIBC Code 128"
+                Send AddComboItem "drCodeHIBC39" "HIBC Code 39"
+                Send AddComboItem "drCodeHIBCDataMatrix" "HIBC Data Matrix ECC200"
+                Send AddComboItem "drCodeHIBCMicroPDF417" "HIBC MicroPDF417"
+                Send AddComboItem "drCodeHIBCPDF417" "HIBC PDF417"
+                Send AddComboItem "drCodeHIBCQR" "HIBC QR Code"
+                Send AddComboItem "drCodeHanXin" "Han Xin (Chinese Sensible) Code"
+                Send AddComboItem "drCodeJapanesePostal" "Japanese Postal Code"
+                Send AddComboItem "drCodeLOGMARS" "LOGMARS"
+                Send AddComboItem "drCodeMaxi" "Maxicode"
+                Send AddComboItem "drCodeMicroPDF417" "MicroPDF417"
+                Send AddComboItem "drCodeMicroQRCode" "Micro QR Code"
+                Send AddComboItem "drCodeOne" "Code One"
+                Send AddComboItem "drCodePDF417" "PDF417"
+                Send AddComboItem "drCodePDF417Truncated" "PDF417 Truncated"
+                Send AddComboItem "drCodeQR" "QR Code"
+                Send AddComboItem "drCodeTelepenAlpha" "Telepen Alpha"
+
+                WebSet psValue to "drCodeExtended3of9"
+            End_Procedure
+        End_Object
+
+        Object oViewer is a cWebDRReportViewer
+           Set phoReport to oReport
+        End_Object
+    End_Object
+End_Object

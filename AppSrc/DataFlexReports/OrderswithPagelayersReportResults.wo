@@ -1,0 +1,180 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+// This cWebview component is the second step of the orders report that shows the usage of pagelayers. The use of pagelayers
+// makes it possible to replace pre-printed forms or simulate the pre-printed form to position and size the objects to print.
+
+// The component contains the report Object, which will be invoked from the cWebDRReportViewer class to produce a HTML
+// "stream". The returned String array contains all pages of the report. The javascript counterpart (previewer.js)
+// shows the result and the user can navigate thru the pages. The cWebDRReportViewer control allows printing of the report 
+// thru the browser and via the action menu the user can select to export the report to one of the supported formats. 
+// Note that for this the report and the data will be reloaded, reformatted. Theoretically the results can be different 
+// due to changed data in the database.
+
+// The "Orders with Pagelayers.dr" does not use only one pagelayer but uses multiple ones. The pagelayer information used
+// is included in the .dr file. There is a pagelayer with DAW paper and a Acme Inc paper. The order layout is available with
+// and without an "approved" stamp. Finally there are pagelayers for English and Dutch text boxes to allow multi language
+// order prints.
+
+Object oOrderswithPagelayersReportResults is a cWebView
+    Set psCaption to "Orders with Pagelayers (Results)"
+    Set pbShowCaption to False
+    Set peViewType to vtZoom
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+
+    Object oReport is a cDRReport
+        Set psReportName to "Orders with Pagelayers.dr"
+
+        Procedure OnInitializeReport
+            Send SetFilters
+            Send SetSortFields
+            Send SetParameters
+        End_Procedure
+
+        // In this routine we find the code that sets the parameter values. The values
+        // for the parameters can be retrieved from an input control or from own coding.
+        Procedure SetParameters
+            String sReportId sValue sPath
+            Integer iParameter
+            tWebNavigateData NavigateData
+
+            Get GetNavigateData to NavigateData
+
+            Get psReportId to sReportId
+
+            Get NamedValueGet NavigateData.NamedValues "CorporateLogoNum" to sValue
+
+            Get ParameterIdByName sReportId "HidePageLayers" to iParameter
+            Set psParameterValue sReportId iParameter to (sValue = "3")
+            If (sValue <> "3") Begin
+                Get ParameterIdByName sReportId "CorporateLogoNum" to iParameter
+                Set psParameterValue sReportId iParameter to sValue
+            End
+
+            Get NamedValueGet NavigateData.NamedValues "PageLayerNum" to sValue
+            Get ParameterIdByName sReportId "PageLayerNum" to iParameter
+            Set psParameterValue sReportId iParameter to sValue
+
+            Get NamedValueGet NavigateData.NamedValues "Language" to sValue
+            Get ParameterIdByName sReportId "Language" to iParameter
+            Set psParameterValue sReportId iParameter to sValue
+
+            Case Begin
+                Case (sValue = 'NL')
+                    Set piReportLanguage '' to LANG_DUTCH
+                    Case Break
+                Case Else
+                    Set piReportLanguage '' to LANG_DEFAULT
+                    Case Break
+            Case End
+
+            Get_File_Path "CodeMast.dat" to sPath
+            Move (ExtractFilePath (sPath)) to sPath
+            Get ParameterIdByName sReportId "CodeMastPath" to iParameter
+            Set psParameterValue sReportId iParameter to sPath
+        End_Procedure
+
+        Procedure SetSortFields
+            tWebNavigateData NavigateData
+            String sReportId sSortField
+            Integer iSortDirection
+
+            Get GetNavigateData to NavigateData
+            Get psReportId to sReportId
+
+            Send RemoveAllRecordSortFields sReportId
+            Get NamedValueGet NavigateData.NamedValues "SortDirection" to iSortDirection
+            Get NamedValueGet NavigateData.NamedValues "SortField" to sSortField
+            Send AddRecordSortField sReportId sSortField iSortDirection
+        End_Procedure
+
+        Procedure SetFilters
+            String sReportId
+            tWebNavigateData NavigateData
+            Integer iValueIndex iModeIndex
+
+            Get psReportId to sReportId
+            Get GetNavigateData to NavigateData
+
+            // Remove all the defined filters from the report
+            Send RemoveAllFilters sReportId
+            Get NamedValueIndex NavigateData.NamedValues "OrderHeaderOrderNumber" to iValueIndex
+            Get NamedValueIndex NavigateData.NamedValues "OrderHeaderOrderNumberMode" to iModeIndex
+
+            If (iModeIndex > -1 and iValueIndex > -1) Begin
+                Send AddFilter sReportId "{OrderHeader.Order_Number}" NavigateData.NamedValues[iModeIndex].sValue NavigateData.NamedValues[iValueIndex].sValue
+            End
+
+            Get NamedValueIndex NavigateData.NamedValues "OrderHeaderCustomerNumber" to iValueIndex
+            Get NamedValueIndex NavigateData.NamedValues "OrderHeaderCustomerNumberMode" to iModeIndex
+
+            If (iModeIndex > -1 and iValueIndex > -1) Begin
+                Send AddFilter sReportId "{OrderHeader.Customer_Number}" NavigateData.NamedValues[iModeIndex].sValue NavigateData.NamedValues[iValueIndex].sValue
+            End
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+
+            WebSetResponsive piZoom rmMobilePortrait to 45
+            WebSetResponsive piZoom rmMobileLandscape to 75
+            WebSetResponsive piZoom rmTabletPortrait to 80
+            WebSetResponsive piZoom rmTabletLandscape to 125
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+            
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetBreadcrumbCaption "Results"
+        Send SetHeaderCaption "Orders with Pagelayers"
+        
+        Send RunReport of oWebMainPanel
+    End_Procedure
+End_Object

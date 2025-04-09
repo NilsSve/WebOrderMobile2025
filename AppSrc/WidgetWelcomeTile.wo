@@ -1,0 +1,57 @@
+﻿Use cWebWidget.pkg
+Use cWebHtmlBox.pkg
+
+Composite cWidgetWelcomeTile is a cWebWidget
+    Set psWidgetCaption to "Welcome Tile"
+    Set psWidgetDescription to "Shows current login details"
+    Set psWidgetName to "WelcomTile"
+    Set piRowSpan to 2
+    Set piColumnSpan to 2
+    Set piDefaultColSpan to 2
+    Set piDefaultRowSpan to 2
+    Set pbShowBorder to True
+    Set pbShowCaption to False
+    
+    Object oWelcomeTile is a cWebHtmlBox
+        Set pbServerOnClick to True
+        Set pbScroll to False
+        Set psCSSClass to "Tile Light"
+        Set psHtml to """
+            <div class="Tile_Title">Welcome</div>
+            <div class="Tile_Subtitle"><a data-ServerOnClick="login">Login</a></div>
+            """
+        
+        Procedure RefreshDetails
+            If (IsLoggedIn(ghoWebSessionManager)) Begin
+            
+                Send UpdateHTML (SFormat("""
+                    <div class="Tile_Title">Welcome</div>
+                    <div class="Tile_Subtitle">%1 (<a data-ServerOnClick="logout">Logout</a>)</div>
+                    """, Trim(htmlEncode(psUserName(ghoWebSessionManager)))))
+            End
+            Else Begin
+                Send UpdateHtml (psHtml(Self))
+            End
+        End_Procedure
+        
+        Procedure OnClick String sId String sParam
+            If (sId = "login") Begin
+                Send NavigatePathBegin oLogin False 
+            End
+            Else If (sId = "logout") Begin
+                Send RequestLogout of ghoWebSessionManager
+                Send RefreshDetails 
+            End
+        End_Procedure
+    
+    End_Object
+
+    Procedure OnInitializeWidget
+        Forward Send OnInitializeWidget
+        
+        Send RefreshDetails of oWelcomeTile
+        
+    End_Procedure
+    
+    
+End_Composite

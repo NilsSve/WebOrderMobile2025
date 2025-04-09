@@ -1,0 +1,103 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+Use cSalesPersonDataDictionary.dd
+
+// This example webview shows the results of the Salesperson Overview report. This web component is only used when
+// the SalesPersonOverviewReport runs on a phone in landscape mode as there is not enough height available for the
+// controls that can be used to change the results and the result itself.
+
+// The viewer object (cWebDRReportViewer) communicates with the report object on oSalespersonOverviewReport view.
+
+Object oSalespersonOverviewReportResults is a cWebView
+    Set psCaption to "Salesperson Overview Results"
+    Set pbShowCaption to False
+    Set peViewType to vtUndefined
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+
+    Object oSalesPerson_DD is a cSalesPersonDataDictionary
+    End_Object
+
+    Object oMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set pbServerOnClickActionLink to True
+
+            Property String psRowId
+
+            WebRegisterPath ntNavigateForward oZoomSalesPerson
+
+            Procedure OnClickActionLink String sData Variant vDataType
+                Forward Send OnClickActionLink sData vDataType
+
+                If (vDataType = 1) Begin
+                    Move sData to SalesPerson.Id
+                    Send Request_Read of oSalesPerson_DD EQ (RefTable (SalesPerson)) 1
+                    Set psRowId to (SerializeRowID (GetRowID (RefTable (SalesPerson))))
+                End
+
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                Forward Send OnGetNavigateForwardData (&NavigateData) hoToView
+
+                Get psRowId to NavigateData.sRowID
+                Move (RefTable (SalesPerson)) to NavigateData.iTable
+            End_Procedure
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Handle hoReport
+
+        Get NamedValueGet NavigateData.NamedValues "ReportObject" to hoReport
+        Set phoReport of oViewer to hoReport
+        Send RunReport of oMainPanel
+    End_Procedure
+End_Object

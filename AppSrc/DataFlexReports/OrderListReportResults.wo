@@ -1,0 +1,135 @@
+﻿Use cWebView.pkg
+Use cWebPanel.pkg
+Use cWebButton.pkg
+Use cWebMenuGroup.pkg
+Use cWebMenuItem.pkg
+Use cWebHtmlBox.pkg
+
+Use cDRReport.pkg
+Use cWebDRReportViewer.pkg
+Use ExportReport.wo
+
+// This example webview is the second part of the orderlist report example. The component contains the report object, which
+// will be invoked from the cWebDRReportViewer class to produce a HTML "stream". The returned String array contains all
+// pages of the report. The javascript counterpart (previewer.js) shows the result and the user can navigate thru the pages.
+// The cWebDRReportViewer control allows printing of the report thru the browser and via the action menu the user can select
+// to export the report to one of the supported formats.
+// Note that for this the report and the data will be reloaded, reformatted. Theoretically the results can be different
+// due to changed data in the database.
+
+// The minimum order total value entered in the selections webview is passed via a NamedValue in the NavigateData parameter.
+
+// The language passed from the browser (the client language) is used to overrule the settings from the server for date and
+// number formatting and for a currency symbol. In a real world a currency symbol change should also mean a recalculation of
+// the amount. For this example we just do as if the value is correct for the currency symbol.
+
+Object oOrderListReportResults is a cWebView
+    Set psCaption to "Order List (Results)"
+    Set pbShowCaption to False
+    Set peViewType to vtZoom
+    Set peWebViewStyle to wvsDrillDown
+    Set peStateMode to vsmOff
+
+    Object oReport is a cDRReport
+        Set psReportName to "OrderList.dr"
+
+        Procedure OnInitializeReport
+            String sReportId 
+            String[] sBrowserLanguages
+
+            Get psReportId to sReportId
+
+            Send SetFilters sReportId
+
+            // Get the preferred browser (client) language and pass this on to the report
+            WebGet pasBrowserLanguages of ghoWebApp to sBrowserLanguages
+            If (SizeOfArray (sBrowserLanguages) > 0) Begin
+                Send SetReportLocaleAndLanguage sReportId sBrowserLanguages[0] 'ReportLanguage'
+            End
+        End_Procedure
+
+        Procedure SetFilters String sReportId
+            tWebNavigateData NavigateData
+            Integer iOrderHeaderOrderTotal iOrderHeaderOrderTotalMode
+
+            Get GetNavigateData to NavigateData
+            Get NamedValueIndex NavigateData.NamedValues "OrderHeaderOrderTotal" to iOrderHeaderOrderTotal
+            Get NamedValueIndex NavigateData.NamedValues "OrderHeaderOrderTotalMode" to iOrderHeaderOrderTotalMode
+
+            If (iOrderHeaderOrderTotalMode > -1 and iOrderHeaderOrderTotal > -1) Begin
+                Send AddFilter sReportId "{OrderHeader.Order_Total}" NavigateData.NamedValues[iOrderHeaderOrderTotalMode].sValue NavigateData.NamedValues[iOrderHeaderOrderTotal].sValue
+            End
+        End_Procedure
+    End_Object
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        Procedure RunReport
+            Send ShowReport of oViewer
+        End_Procedure
+
+        Object oViewer is a cWebDRReportViewer
+            Set phoReport to oReport
+            Set pbShowExportButton to True
+            Set pbServerOnExportReport to True
+
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnExportReport
+                Send CopyExportOptions of oExportReportWebView (oReport)
+                Send NavigatePath
+            End_Procedure 
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                If (SizeOfArray (NavigateData.NamedValues) <> 0) Begin
+                    Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+                End
+            End_Procedure
+
+            WebSetResponsive pbShowToolbar rmTablet to False
+
+            WebSetResponsive piZoom rmMobilePortrait to 45
+            WebSetResponsive piZoom rmMobileLandscape to 75
+            WebSetResponsive piZoom rmTabletPortrait to 100
+            WebSetResponsive piZoom rmTabletLandscape to 125
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oPrintReportMenuItem is a cWebMenuItem
+            Set psCaption to "Print"
+            Set psTooltip to "Print the report"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send PrintReport of oViewer
+            End_Procedure
+        End_Object
+
+        Object oExportReportMenuItem is a cWebMenuItem
+            Set psCaption to "Export Results"
+            Set psTooltip to "Select Export Options"
+            Set peActionDisplay to adMenu
+
+            WebRegisterPath ntNavigateForward oExportReportWebView
+
+            Procedure OnClick
+                Send NavigatePath
+            End_Procedure
+
+            Procedure OnNavigateBack Handle hoCallback tWebNavigateData NavigateData
+                Send ExportReportToDownloadURL of oReport NavigateData.NamedValues
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Handle hoInvokingView Handle hoInvokingObject
+        Send SetBreadcrumbCaption "Results"
+        Send SetHeaderCaption "Order List"
+
+        Send RunReport of oWebMainPanel
+    End_Procedure
+End_Object
